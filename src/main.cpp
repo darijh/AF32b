@@ -1,10 +1,12 @@
 #include <Arduino.h>
+#include <hardware.h>
+#include <regmap.h>
 
-void setup() { pinMode(PC13, OUTPUT); }
-
-void loop() {
-  digitalWrite(PC13, HIGH);
-  delay(500);
-  digitalWrite(PC13, LOW);
-  delay(500);
+void setup() {
+  pinMode(HW_STS, OUTPUT);
+  DBG_PORT.begin(115200);
+  while (!DBG_PORT) {
+  }
 }
+
+void loop() {}
