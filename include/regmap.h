@@ -1,4 +1,4 @@
-#define REGS 39
+#define REGS 37
 #define RW_END 14
 
 // DEFAULT
