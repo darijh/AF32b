@@ -1,8 +1,8 @@
 // PINOUT
-#define HW_VOUT_A PA0
-#define HW_IOUT_A PA1
-#define HW_VOUT_B PA4
-#define HW_IOUT_B PB0
+#define HW_VOUT_A ADC_CHANNEL_0
+#define HW_IOUT_A ADC_CHANNEL_1
+#define HW_VOUT_B ADC_CHANNEL_4
+#define HW_IOUT_B ADC_CHANNEL_8
 #define HW_ID_B0 PB3
 #define HW_ID_B1 PA10
 #define HW_ID_B2 PA2
