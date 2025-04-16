@@ -1,5 +1,9 @@
-#define REGS 41
+#define REGS_SIZE 41
 #define RW_END 17
+#define VOUT_A_BIT 0
+#define IOUT_A_BIT 1
+#define VOUT_B_BIT 2
+#define IOUT_B_BIT 3
 
 // DEFAULT
 #define MB_DEF_VHL VMAX

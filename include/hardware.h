@@ -16,6 +16,8 @@
 #define HW_OK PB9
 #define HW_FAIL PB8
 
+#define READS 20 // Número de lecturas para promediar
+
 // HW CONFIG
 #define DBG_PORT Serial
 #define COM_PORT Serial3
