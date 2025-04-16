@@ -3,6 +3,7 @@
 
 #include "stm32f1xx_hal.h"
 #include <AinHandler.h>
+#include <PID.h>
 
 #include <hardware.h>
 #include <hardware_config.h>
@@ -10,23 +11,21 @@
 #include <serial_number.h>
 
 #include <core.h>
-namespace asciistatus
-{
-  enum status
-  {
-    D = 68,
-    H = 72,
-    L = 76,
-    N = 78
-  };
+namespace asciistatus {
+enum status { D = 68, H = 72, L = 76, N = 78 };
 };
+
+#define Kp 2.4
+#define Ki 9.6
+#define Kd 0.15
+PID PID_A(Kp, Ki, Kd, false, 0, 4095, 10);
 
 uint16_t regs[REGS_SIZE]; // Array de registros
 AinHandler vout_a, iout_a, vout_b, iout_b;
+
 void Config(); // Prototipo de la función de configuración
 
-void setup()
-{
+void setup() {
   HAL_Init();           // Inicializa HAL y SysTick
   SystemClock_Config(); // Configura relojes según CubeMX
   DBG_PORT.begin();     // inicializa USB CDC
@@ -48,8 +47,7 @@ void setup()
   Config();
 }
 
-void loop()
-{
+void loop() {
   vout_a.Sample(
       Read_ADC_Channel_Raw(&hadc2, ADC_CHANNEL_0, ADC_SAMPLETIME_28CYCLES_5));
   iout_a.Sample(
@@ -69,24 +67,17 @@ void loop()
   // vout_a
   regs[MB_V_VAL_A] = max(vout_a.GetEU_AVG(), (double)0);
   estado = vout_a.GetStatus(regs[MB_V_VAL_A]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
+  if (estado == asciistatus::H || estado == asciistatus::L) {
     ml_alarm = millis();
     bitSet(regs[MB_ALARM], VOUT_A_BIT);
     regs[MB_V_STS_A] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], VOUT_A_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
+  } else {
+    if (bitRead(regs[MB_ALARM], VOUT_A_BIT)) {
+      if (millis() > ml_alarm + 1000) {
         bitClear(regs[MB_ALARM], VOUT_A_BIT);
         regs[MB_V_STS_A] = int(estado);
       }
-    }
-    else
-    {
+    } else {
       regs[MB_V_STS_A] = int(estado);
     }
   }
@@ -94,24 +85,17 @@ void loop()
   // iout_a
   regs[MB_I_VAL_A] = max(iout_a.GetEU_AVG(), (double)0);
   estado = iout_a.GetStatus(regs[MB_I_VAL_A]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
+  if (estado == asciistatus::H || estado == asciistatus::L) {
     ml_alarm = millis();
     bitSet(regs[MB_ALARM], IOUT_A_BIT);
     regs[MB_I_STS_A] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], IOUT_A_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
+  } else {
+    if (bitRead(regs[MB_ALARM], IOUT_A_BIT)) {
+      if (millis() > ml_alarm + 1000) {
         bitClear(regs[MB_ALARM], IOUT_A_BIT);
         regs[MB_I_STS_A] = int(estado);
       }
-    }
-    else
-    {
+    } else {
       regs[MB_I_STS_A] = int(estado);
     }
   }
@@ -119,24 +103,17 @@ void loop()
   // vout_b
   regs[MB_V_VAL_B] = max(vout_b.GetEU_AVG(), (double)0);
   estado = vout_b.GetStatus(regs[MB_V_VAL_B]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
+  if (estado == asciistatus::H || estado == asciistatus::L) {
     ml_alarm = millis();
     bitSet(regs[MB_ALARM], VOUT_B_BIT);
     regs[MB_V_STS_B] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], VOUT_B_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
+  } else {
+    if (bitRead(regs[MB_ALARM], VOUT_B_BIT)) {
+      if (millis() > ml_alarm + 1000) {
         bitClear(regs[MB_ALARM], VOUT_B_BIT);
         regs[MB_V_STS_B] = int(estado);
       }
-    }
-    else
-    {
+    } else {
       regs[MB_V_STS_B] = int(estado);
     }
   }
@@ -144,30 +121,22 @@ void loop()
   // iout_b
   regs[MB_I_VAL_B] = max(iout_b.GetEU_AVG(), (double)0);
   estado = iout_b.GetStatus(regs[MB_I_VAL_B]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
+  if (estado == asciistatus::H || estado == asciistatus::L) {
     ml_alarm = millis();
     bitSet(regs[MB_ALARM], IOUT_B_BIT);
     regs[MB_I_STS_B] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], IOUT_B_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
+  } else {
+    if (bitRead(regs[MB_ALARM], IOUT_B_BIT)) {
+      if (millis() > ml_alarm + 1000) {
         bitClear(regs[MB_ALARM], IOUT_B_BIT);
         regs[MB_I_STS_B] = int(estado);
       }
-    }
-    else
-    {
+    } else {
       regs[MB_I_STS_B] = int(estado);
     }
   }
 #ifdef CALIBRACION
-  if (DBG_PORT.available())
-  {
+  if (DBG_PORT.available()) {
     String input = DBG_PORT.readStringUntil('\n');
     input.trim();
     int newDuty = input.toInt();
@@ -182,15 +151,13 @@ void loop()
       //
       DBG_PORT.print("Duty updated to: ");
       DBG_PORT.println(duty);
-    }
-    else
-    {
-      DBG_PORT.println("Invalid duty value. Please enter a value between 0 and 100.");
+    } else {
+      DBG_PORT.println(
+          "Invalid duty value. Please enter a value between 0 and 100.");
     }
   }
   static uint32_t ml = 0;
-  if (millis() > ml + 1000)
-  {
+  if (millis() > ml + 1000) {
     ml = millis();
     /*     DBG_PORT.print("Vout_a: ");
         DBG_PORT.print(vout_a.GetADC_AVG());
@@ -212,10 +179,8 @@ void loop()
 #endif
 }
 
-void Config()
-{
-  for (uint8_t i = 0; i < REGS_SIZE; i++)
-  {
+void Config() {
+  for (uint8_t i = 0; i < REGS_SIZE; i++) {
     regs[i] = 0;
   }
   uint8_t id = Calculate_ID();

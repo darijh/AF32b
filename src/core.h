@@ -72,7 +72,40 @@ float Read_Temp() {
   return temp;
 }
 
-void Set_Vout_A(
-    uint16_t set_point) { // pendiente de avanzar con mapa de registros
-  float error = set_point / 100.0 - Read_ADC(PA0) * 1000;
+void Set_Out_A() {
+
+  uint16_t duty_a = PID_A.compute(vout_a.GetEU_AVG(), regs[MB_VSET_A]);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, Set_Duty(duty_a)); // VSET_A
+  static uint32_t ml = 0;
+  if (millis() > ml + 1000) {
+    ml = millis();
+    Serial.print("Vout_a: ");
+    Serial.print(vout_a.GetEU_AVG() / 100.0f, 2);
+    Serial.print(" V | Iout_a: ");
+    Serial.print(iout_a.GetEU_AVG() / 100.0f, 2);
+    Serial.print(" A | Vset_a: ");
+    Serial.print(regs[MB_VSET_A] / 100.0f, 2);
+    Serial.print(" V | PWM: ");
+    Serial.print(duty_a);
+    Serial.print(" | Saturado: ");
+    Serial.println(PID_A.isSaturated() ? "SI" : "NO");
+  }
+}
+
+uint16_t Serial_Input(uint16_t min, uint16_t max) {
+  if (DBG_PORT.available()) {
+    String input = DBG_PORT.readStringUntil('\n');
+    input.trim();
+    uint16_t newVal = input.toInt();
+    uint16_t val = 0;                   // Default value
+    if (newVal >= min && newVal <= max) // Valid range for val
+    {
+      val = static_cast<uint8_t>(newVal);
+      DBG_PORT.print("Val updated to: ");
+      DBG_PORT.println(val);
+    } else {
+      DBG_PORT.println("Invalid Val value");
+    }
+    return val;
+  }
 }
