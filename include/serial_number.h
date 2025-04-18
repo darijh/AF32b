@@ -1,6 +1,11 @@
-
 #define VMAX 2400
 #define IMAX 5000
+#define VKp 2.4
+#define VKi 9.6
+#define VKd 0.15
+#define IKp 2.0
+#define IKi 5.0
+#define IKd 0.1
 #define VOUT_A_MULT 0.741372946
 #define VOUT_A_OFFSET -12.13325234
 #define IOUT_A_MULT 1.533400016

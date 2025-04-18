@@ -1,78 +1,37 @@
-
 #include "PID.h"
-#include <Arduino.h>
 
-PID::PID(double kp_, double ki_, double kd_, bool reverse, double outMin_, double outMax_, unsigned long sampleTimeMs) {
-  setTunings(kp_, ki_, kd_);
-  setOutputLimits(outMin_, outMax_);
-  setSampleTime(sampleTimeMs);
-  setDirection(reverse);
-  setMode(true);
-  reset();
-}
-
-void PID::setTunings(double kp_, double ki_, double kd_) {
-  kp = kp_;
-  ki = ki_;
-  kd = kd_;
-}
+PID::PID(double kp, double ki, double kd)
+    : _kp(kp), _ki(ki), _kd(kd), _integral(0), _prevError(0),
+      _outputMin(0), _outputMax(10000), _firstCompute(true) {}
 
 void PID::setOutputLimits(double min, double max) {
-  outMin = min;
-  outMax = max;
-}
-
-void PID::setSampleTime(unsigned long newSampleTimeMs) {
-  sampleTime = newSampleTimeMs;
-}
-
-void PID::setMode(bool enable) {
-  enabled = enable;
-}
-
-void PID::setDirection(bool reverse) {
-  reverseDirection = reverse;
+    _outputMin = min;
+    _outputMax = max;
 }
 
 void PID::reset() {
-  integral = 0;
-  prevError = 0;
-  lastTime = millis();
-  saturated = false;
+    _integral = 0;
+    _prevError = 0;
+    _firstCompute = true;
 }
 
 double PID::compute(double input, double setpoint) {
-  if (!enabled) return -1;
+    double error = setpoint - input;
+    _integral += error;
 
-  unsigned long now = millis();
-  unsigned long deltaTime = now - lastTime;
-  if (deltaTime < sampleTime) return -1;
+    double derivative = 0;
+    if (!_firstCompute) {
+        derivative = error - _prevError;
+    } else {
+        _firstCompute = false;
+    }
 
-  lastTime = now;
+    _prevError = error;
 
-  double error = setpoint - input;
-  if (reverseDirection) error = -error;
+    double output = _kp * error + _ki * _integral + _kd * derivative;
 
-  integral += error * (deltaTime / 1000.0);
-  double derivative = (error - prevError) / (deltaTime / 1000.0);
-  prevError = error;
+    if (output > _outputMax) output = _outputMax;
+    else if (output < _outputMin) output = _outputMin;
 
-  double output = kp * error + ki * integral + kd * derivative;
-
-  saturated = false;
-  if (output > outMax) {
-    output = outMax;
-    saturated = true;
-    integral -= error * (deltaTime / 1000.0);
-  } else if (output < outMin) {
-    output = outMin;
-    saturated = true;
-    integral -= error * (deltaTime / 1000.0);
-  }
-
-  return output;
-}
-
-bool PID::isSaturated() const {
-  return saturated;
+    return output;
 }

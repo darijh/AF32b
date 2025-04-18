@@ -4,16 +4,20 @@
 #define IOUT_A_BIT 1
 #define VOUT_B_BIT 2
 #define IOUT_B_BIT 3
+#define REG_A_BIT 4
+#define REG_B_BIT 5
 
 // DEFAULT
 #define MB_DEF_VHL VMAX
 #define MB_DEF_IHL IMAX
+#define MB_DEF_VLL 10
+#define MB_DEF_ILL 10
 
 // RW
-#define MB_ONOFF_EN 0
-#define MB_ONOFF_TON 1
-#define MB_ONOFF_TOFF 2
-#define MB_CTRL_MODE 3
+#define MB_APPLY 0
+#define MB_CANCEL 1
+#define MB_FACTORY_RESET 2
+#define MB_IRED_NC_MODE 3
 #define MB_VSET_A 4
 #define MB_ISET_A 5
 #define MB_IRED_A 6
@@ -32,7 +36,7 @@
 // RO
 #define MB_ALARM 18
 #define MB_TEMP 19
-#define MB_CTRL_STS 20
+#define MB_IRED_STS 20
 #define MB_V_VAL_A 21
 #define MB_V_STS_A 22
 #define MB_I_VAL_A 23
