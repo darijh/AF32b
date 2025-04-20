@@ -14,6 +14,8 @@ void Config();
 uint8_t Get_ID();
 uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
                               uint32_t samplingTime);
+void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg, uint8_t alarm_bit,
+                int16_t *alarm_reg, uint32_t &ml_alarm);
 void ADCReadings(uint32_t interval = 0);
 float Read_VDDA();
 float Read_Temp();
@@ -141,6 +143,35 @@ float Read_ADC(uint32_t channel)
   return val;
 }
 
+void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg, uint8_t alarm_bit,
+                int16_t *alarm_reg, uint32_t &ml_alarm)
+{
+  *value_reg = max(ain.GetEU_AVG(), 0.0);
+  char status = ain.GetStatus(*value_reg);
+
+  if (status == asciistatus::H || status == asciistatus::L)
+  {
+    ml_alarm = millis();
+    bitSet(*alarm_reg, alarm_bit);
+    *status_reg = int(status);
+  }
+  else
+  {
+    if (bitRead(*alarm_reg, alarm_bit))
+    {
+      if (millis() > ml_alarm + 1000)
+      {
+        bitClear(*alarm_reg, alarm_bit);
+        *status_reg = int(status);
+      }
+    }
+    else
+    {
+      *status_reg = int(status);
+    }
+  }
+}
+
 void ADCReadings(uint32_t interval)
 {
   static uint32_t ml_sample = 0;
@@ -148,121 +179,30 @@ void ADCReadings(uint32_t interval)
   {
     ml_sample = millis();
     vout_a.Sample(
-        Read_ADC_Channel_Raw(&hadc2, ADC_CHANNEL_0, ADC_SAMPLETIME_28CYCLES_5));
+        Read_ADC_Channel_Raw(&hadc2, HW_VOUT_A, ADC_SAMPLETIME_28CYCLES_5));
     iout_a.Sample(
-        Read_ADC_Channel_Raw(&hadc2, ADC_CHANNEL_1, ADC_SAMPLETIME_28CYCLES_5));
+        Read_ADC_Channel_Raw(&hadc2, HW_IOUT_A, ADC_SAMPLETIME_28CYCLES_5));
     vout_b.Sample(
-        Read_ADC_Channel_Raw(&hadc2, ADC_CHANNEL_4, ADC_SAMPLETIME_28CYCLES_5));
+        Read_ADC_Channel_Raw(&hadc2, HW_VOUT_B, ADC_SAMPLETIME_28CYCLES_5));
     iout_b.Sample(
-        Read_ADC_Channel_Raw(&hadc2, ADC_CHANNEL_8, ADC_SAMPLETIME_28CYCLES_5));
+        Read_ADC_Channel_Raw(&hadc2, HW_IOUT_B, ADC_SAMPLETIME_28CYCLES_5));
   }
+
   vout_a.Run();
   vout_b.Run();
   iout_a.Run();
   iout_b.Run();
 
-  char estado;
-  static uint32_t ml_alarm = 0;
-
-  // vout_a
-  regs[MB_V_VAL_A] = max(vout_a.GetEU_AVG(), (double)0);
-  estado = vout_a.GetStatus(regs[MB_V_VAL_A]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
-    ml_alarm = millis();
-    bitSet(regs[MB_ALARM], VOUT_A_BIT);
-    regs[MB_V_STS_A] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], VOUT_A_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
-        bitClear(regs[MB_ALARM], VOUT_A_BIT);
-        regs[MB_V_STS_A] = int(estado);
-      }
-    }
-    else
-    {
-      regs[MB_V_STS_A] = int(estado);
-    }
-  }
-
-  // iout_a
-  regs[MB_I_VAL_A] = max(iout_a.GetEU_AVG(), (double)0);
-  estado = iout_a.GetStatus(regs[MB_I_VAL_A]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
-    ml_alarm = millis();
-    bitSet(regs[MB_ALARM], IOUT_A_BIT);
-    regs[MB_I_STS_A] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], IOUT_A_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
-        bitClear(regs[MB_ALARM], IOUT_A_BIT);
-        regs[MB_I_STS_A] = int(estado);
-      }
-    }
-    else
-    {
-      regs[MB_I_STS_A] = int(estado);
-    }
-  }
-
-  // vout_b
-  regs[MB_V_VAL_B] = max(vout_b.GetEU_AVG(), (double)0);
-  estado = vout_b.GetStatus(regs[MB_V_VAL_B]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
-    ml_alarm = millis();
-    bitSet(regs[MB_ALARM], VOUT_B_BIT);
-    regs[MB_V_STS_B] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], VOUT_B_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
-        bitClear(regs[MB_ALARM], VOUT_B_BIT);
-        regs[MB_V_STS_B] = int(estado);
-      }
-    }
-    else
-    {
-      regs[MB_V_STS_B] = int(estado);
-    }
-  }
-
-  // iout_b
-  regs[MB_I_VAL_B] = max(iout_b.GetEU_AVG(), (double)0);
-  estado = iout_b.GetStatus(regs[MB_I_VAL_B]);
-  if (estado == asciistatus::H || estado == asciistatus::L)
-  {
-    ml_alarm = millis();
-    bitSet(regs[MB_ALARM], IOUT_B_BIT);
-    regs[MB_I_STS_B] = int(estado);
-  }
-  else
-  {
-    if (bitRead(regs[MB_ALARM], IOUT_B_BIT))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
-        bitClear(regs[MB_ALARM], IOUT_B_BIT);
-        regs[MB_I_STS_B] = int(estado);
-      }
-    }
-    else
-    {
-      regs[MB_I_STS_B] = int(estado);
-    }
-  }
+  static uint32_t ml_alarm_vout_a = 0, ml_alarm_iout_a = 0;
+  static uint32_t ml_alarm_vout_b = 0, ml_alarm_iout_b = 0;
+  HandleAins(vout_a, &regs[MB_V_VAL_A], &regs[MB_V_STS_A], VOUT_A_BIT,
+             &regs[MB_ALARM], ml_alarm_vout_a);
+  HandleAins(iout_a, &regs[MB_I_VAL_A], &regs[MB_I_STS_A], IOUT_A_BIT,
+             &regs[MB_ALARM], ml_alarm_iout_a);
+  HandleAins(vout_b, &regs[MB_V_VAL_B], &regs[MB_V_STS_B], VOUT_B_BIT,
+             &regs[MB_ALARM], ml_alarm_vout_b);
+  HandleAins(iout_b, &regs[MB_I_VAL_B], &regs[MB_I_STS_B], IOUT_B_BIT,
+             &regs[MB_ALARM], ml_alarm_iout_b);
 }
 
 float Read_VDDA()
@@ -299,10 +239,8 @@ void Regulation()
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, Set_Duty(regs[MB_I_DUTY_A]));
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, Set_Duty(regs[MB_V_DUTY_B]));
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, Set_Duty(regs[MB_I_DUTY_B]));
-  bool reg_a_alarm = regulator_a.isNotReachingSetpoint();
-  bool reg_b_alarm = regulator_b.isNotReachingSetpoint();
-  bitWrite(regs[MB_ALARM], REG_A_BIT, reg_a_alarm);
-  bitWrite(regs[MB_ALARM], REG_B_BIT, reg_b_alarm);
+  bitWrite(regs[MB_ALARM], REG_A_BIT, regulator_a.isNotReachingSetpoint());
+  bitWrite(regs[MB_ALARM], REG_B_BIT, regulator_b.isNotReachingSetpoint());
 }
 
 void Factory_Reset()
@@ -361,16 +299,8 @@ void OneSecondTask()
   }
 
   // HOROMETRO A
-  bool hor_a_status = false;
-  if (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_A] > IMAX * 0.01f)
-  {
-    hor_a.Count();
-    hor_a_status = true;
-  }
-  else
-  {
-    hor_a_status = false;
-  }
+  hor_a.Count();
+  bool hor_a_status = (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_A] > IMAX * 0.01f) ? true : false;
   hor_a.SetEnable(hor_a_status);
   regs[MB_HS_STS_A] = hor_a_status;
   regs[MB_HS_A] = hor_a.GetHs();
@@ -378,16 +308,8 @@ void OneSecondTask()
   regs[MB_ROLLS_A] = hor_a.GetRolls();
 
   // HOROMETRO B
-  bool hor_b_status = false;
-  if (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_B] > IMAX * 0.01f)
-  {
-    hor_b.Count();
-    hor_b_status = true;
-  }
-  else
-  {
-    hor_b_status = false;
-  }
+  hor_b.Count();
+  bool hor_b_status = (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_B] > IMAX * 0.01f) ? true : false;
   hor_b.SetEnable(hor_b_status);
   regs[MB_HS_STS_B] = hor_b_status;
   regs[MB_HS_B] = hor_b.GetHs();
@@ -395,6 +317,7 @@ void OneSecondTask()
   regs[MB_ROLLS_B] = hor_b.GetRolls();
 
 #ifdef CALIBRACION
+  Factory_Reset();
   DBG_PORT.print("Vout_a: ");
   DBG_PORT.print(vout_a.GetADC_AVG());
   DBG_PORT.print(" Iout_a: ");

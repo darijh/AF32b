@@ -1,3 +1,9 @@
+// Handles globales
+TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim3;
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -10,9 +16,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-  }
+  HAL_RCC_OscConfig(&RCC_OscInitStruct);
 
   // Selecciona PLL como SYSCLK, prescalers AHB/1, APB1/2, APB2/1
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |
@@ -21,9 +25,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-  {
-  }
+  HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
 
   // Ajuste USB prescaler para 48 MHz USB
   RCC->CFGR |= RCC_CFGR_USBPRE;
@@ -80,10 +82,6 @@ void MX_GPIO_Init(void)
 #endif
 }
 
-// Handles globales
-TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim3;
-
 void MX_TIM1_Init(void)
 {
   TIM_OC_InitTypeDef sConfigOC = {0};
@@ -99,23 +97,17 @@ void MX_TIM1_Init(void)
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
-  {
-  }
+  HAL_TIM_PWM_Init(&htim1);
 
   // Configura canal 1 en PWM1
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0; // duty=0% al inicio
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-  }
+  HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1);
 
   // Configura canal 2 en PWM1
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-  }
+  HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2);
 
   // Arranca PWM en TIM1 canales 1 y 2
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -136,31 +128,22 @@ void MX_TIM3_Init(void)
   htim3.Init.Period = 4095;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-  }
+  HAL_TIM_PWM_Init(&htim3);
 
   // Configura canal 1 en PWM1
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-  }
+  HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1);
 
   // Configura canal 2 en PWM1
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-  }
+  HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2);
 
   // Arranca PWM en TIM3 canales 1 y 2
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 }
-
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
 
 void MX_ADC1_Init(void)
 {
@@ -174,10 +157,8 @@ void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START; // Conversión por software
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1; // Solo un canal por conversión
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    // Manejo de error
-  }
+  HAL_ADC_Init(&hadc1);
+
   HAL_ADCEx_Calibration_Start(&hadc1); // Calibración de ADC1
 }
 
@@ -193,9 +174,7 @@ void MX_ADC2_Init(void)
   hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START; // Conversión por software
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.NbrOfConversion = 1; // Solo un canal por conversión
-  if (HAL_ADC_Init(&hadc2) != HAL_OK)
-  {
-    // Manejo de error
-  }
+  HAL_ADC_Init(&hadc2);
+
   HAL_ADCEx_Calibration_Start(&hadc2); // Calibración de ADC2
 }
