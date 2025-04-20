@@ -12,6 +12,7 @@ public:
 
     void setSetpoints(double voltageSetpoint_mV, double currentSetpoint_mA, double restCurrent_mA);
     void update(double voltageReading, double currentReading, bool restMode);
+    void setEnable(bool enable);
 
     int getVoltageDuty() const;
     int getCurrentDuty() const;
@@ -31,6 +32,7 @@ private:
 
     bool _restMode;
     bool _currentMode;
+    bool _enable = false;
 
     double _voltageReading;
     double _currentReading;

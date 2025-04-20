@@ -26,8 +26,22 @@ void PowerController::setSetpoints(double voltageSetpoint_mV, double currentSetp
     _restCurrent = restCurrent_mA;
 }
 
+void PowerController::setEnable(bool enable)
+{
+    _enable = enable;
+    if (!enable)
+    {
+        _pidVoltage.reset();
+        _pidCurrent.reset();
+        _voltageDuty = 0;
+        _currentDuty = 0;
+    }
+}
+
 void PowerController::update(double voltageReading, double currentReading, bool restMode)
 {
+    if (!_enable)
+        return;
     _restMode = restMode;
     _voltageReading = voltageReading;
     _currentReading = currentReading;

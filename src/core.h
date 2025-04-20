@@ -45,6 +45,7 @@ void CoreInit()
   one_second_task.setCallback(OneSecondTask);
   one_hour_task.setCallback(OneHourTask);
   one_day_task.setCallback(OneDayTask);
+  Config();
 }
 
 void Config()
@@ -92,6 +93,8 @@ void Config()
   iout_b.SetLoLimit(run_regs[MB_ILL_B]);
   iout_b.SetConstants(IOUT_B_MULT, IOUT_B_OFFSET);
 
+  regulator_a.setEnable(run_regs[MB_ENALBLE]);
+  regulator_b.setEnable(run_regs[MB_ENALBLE]);
   regulator_a.setSetpoints(run_regs[MB_VSET_A], run_regs[MB_ISET_A], regs[MB_IRED_A]);
   regulator_b.setSetpoints(run_regs[MB_VSET_B], run_regs[MB_ISET_B], regs[MB_IRED_B]);
 }
@@ -288,6 +291,9 @@ void Modbus_Listener()
 
 void OneSecondTask()
 {
+  digitalWrite(HW_STS, modbus_slave.active);
+  digitalWrite(HW_FAIL, (regs[MB_ALARM]) ? HIGH : LOW);
+  digitalWrite(HW_OK, (regs[MB_ALARM]) ? LOW : HIGH);
   regs[MB_TEMP] = Read_Temp() * 100.0f; // Lee la temperatura
   if (run_regs[MB_IRED_NC_MODE])
   {                                            // Modo NC
