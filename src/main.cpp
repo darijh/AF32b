@@ -21,10 +21,10 @@ int16_t regs[REGS_SIZE]; // Array de registros
 // OBJECTS
 HardwareSerial Serial3(PB11, PB10); // RX = PB11, TX = PB10
 Slave<int16_t, HardwareSerial> modbus_slave;
-EepromManager eepr(eeprom_manager::NATIVE);
-AinHandler vout_a, iout_a, vout_b, iout_b;
-PowerController regulator_a(VKp, VKi, VKd, IKp, IKi, IKd);
-PowerController regulator_b(VKp, VKi, VKd, IKp, IKi, IKd);
+EepromManager eepr(eeprom_manager::NATIVE);                // EepromManager(eeprom_manager::RTC24C32_64, mem_table, 0x50);
+AinHandler vout_a, iout_a, vout_b, iout_b;                 // AinHandler(READS);
+PowerController regulator_a(VKp, VKi, VKd, IKp, IKi, IKd); // PowerController(VKp, VKi, VKd, IKp, IKi, IKd);
+PowerController regulator_b(VKp, VKi, VKd, IKp, IKi, IKd); // PowerController(VKp, VKi, VKd, IKp, IKi, IKd);
 Horometer hor_a, hor_b;
 PeriodicTask one_second_task(1000);  // Tarea periódica de 1 segundo
 PeriodicTask one_hour_task(3600000); // Tarea periódica de 1 hora
@@ -36,8 +36,8 @@ PeriodicTask one_day_task(86400000); // Tarea periódica de 1 día
 
 void setup()
 {
-  HAL_Init();
-  SystemClock_Config();
+  HAL_Init();           // Inicializa la HAL
+  SystemClock_Config(); // Configura el reloj del sistema
   MX_GPIO_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
@@ -48,10 +48,10 @@ void setup()
 
 void loop()
 {
-  one_second_task.run(millis());
-  one_hour_task.run(millis());
-  one_day_task.run(millis());
-  modbus_slave.Poll(regs, REGS_SIZE);
-  ADCReadings();
-  Regulation();
+  one_second_task.run(millis());      // Ejecuta la tarea de 1 segundo
+  one_hour_task.run(millis());        // Ejecuta la tarea de 1 hora
+  one_day_task.run(millis());         // Ejecuta la tarea de 1 día
+  modbus_slave.Poll(regs, REGS_SIZE); // Polling del Modbus
+  ADCReadings();                      // Lee los valores de ADC
+  Regulation();                       // Ejecuta la regulación
 }

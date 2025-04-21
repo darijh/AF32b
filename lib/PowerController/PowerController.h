@@ -10,7 +10,7 @@ public:
         double voltageKp, double voltageKi, double voltageKd,
         double currentKp, double currentKi, double currentKd);
 
-    void setSetpoints(double voltageSetpoint_mV, double currentSetpoint_mA, double restCurrent_mA);
+    void setSetpoints(double voltageSetpoint_dV, double currentSetpoint_mA, double restCurrent_mA);
     void update(double voltageReading, double currentReading, bool restMode);
     void setEnable(bool enable);
 

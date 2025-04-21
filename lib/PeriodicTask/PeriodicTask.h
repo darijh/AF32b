@@ -11,7 +11,7 @@ public:
     // Método que debe llamarse periódicamente (por ejemplo desde loop())
     void run(unsigned long currentMillis)
     {
-        if (cb && (currentMillis - lastExecution >= interval))
+        if (cb && (currentMillis - lastExecution >= interval)) // Verifica si ha pasado el intervalo
         {
             lastExecution = currentMillis;
             cb();

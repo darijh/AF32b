@@ -19,9 +19,9 @@ PowerController::PowerController(
     _lastStableMillis = millis();
 }
 
-void PowerController::setSetpoints(double voltageSetpoint_mV, double currentSetpoint_mA, double restCurrent_mA)
+void PowerController::setSetpoints(double voltageSetpoint_dV, double currentSetpoint_mA, double restCurrent_mA)
 {
-    _voltageSetpoint = voltageSetpoint_mV;
+    _voltageSetpoint = voltageSetpoint_dV;
     _currentSetpoint = currentSetpoint_mA;
     _restCurrent = restCurrent_mA;
 }

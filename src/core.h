@@ -11,11 +11,11 @@ namespace asciistatus
 };
 void CoreInit();
 void Config();
-uint8_t Get_ID();
+uint8_t Get_ID(); // Lee el ID del hardware
 uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
                               uint32_t samplingTime);
 void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg, uint8_t alarm_bit,
-                int16_t *alarm_reg, uint32_t &ml_alarm);
+                int16_t *alarm_reg, uint32_t &ml_alarm); // Maneja los AINs
 void ADCReadings(uint32_t interval = 0);
 float Read_VDDA();
 float Read_Temp();
@@ -32,29 +32,29 @@ void HorBCallback();
 
 void CoreInit()
 {
-  eepr.begin();
+  eepr.begin(); // Inicializa el gestor de EEPROM
   hor_a.Begin(eepr.read<int16_t>(MB_HS_A, eeprom_manager::I16T),
               eepr.read<int16_t>(MB_ROLLS_A, eeprom_manager::I16T));
   hor_b.Begin(eepr.read<int16_t>(MB_HS_B, eeprom_manager::I16T),
               eepr.read<int16_t>(MB_ROLLS_B, eeprom_manager::I16T));
-  modbus_slave.Begin(&COM_PORT, BAUDRATE, Get_ID());
-  modbus_slave.Enable(true);
-  modbus_slave.SetWriteListener(Modbus_Listener);
-  hor_a.SetHsListener(HorACallback);
-  hor_b.SetHsListener(HorBCallback);
-  one_second_task.setCallback(OneSecondTask);
-  one_hour_task.setCallback(OneHourTask);
-  one_day_task.setCallback(OneDayTask);
+  modbus_slave.Begin(&COM_PORT, BAUDRATE, Get_ID()); // Inicializa el puerto serie
+  modbus_slave.Enable(true);                         // Habilita el puerto serie
+  modbus_slave.SetWriteListener(Modbus_Listener);    // Establece el listener de escritura
+  hor_a.SetHsListener(HorACallback);                 // Establece el listener de Horometro A
+  hor_b.SetHsListener(HorBCallback);                 // Establece el listener de Horometro B
+  one_second_task.setCallback(OneSecondTask);        // Establece el callback de la tarea de 1 segundo
+  one_hour_task.setCallback(OneHourTask);            // Establece el callback de la tarea de 1 hora
+  one_day_task.setCallback(OneDayTask);              // Establece el callback de la tarea de 1 día
   Config();
 }
 
 void Config()
 {
-  memset(regs, 0, sizeof(regs));
-  eepr.read<int16_t>(0, RW_END, eeprom_manager::I16T, regs);
+  memset(regs, 0, sizeof(regs));                             // Limpia el array de registros
+  eepr.read<int16_t>(0, RW_END, eeprom_manager::I16T, regs); // Lee los registros de la EEPROM
   for (uint8_t i = 0; i < RW_END; i++)
   {
-    run_regs[i] = regs[i];
+    run_regs[i] = regs[i]; // Copia los registros a run_regs
   }
 
   // Vout_a
@@ -149,8 +149,8 @@ float Read_ADC(uint32_t channel)
 void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg, uint8_t alarm_bit,
                 int16_t *alarm_reg, uint32_t &ml_alarm)
 {
-  *value_reg = max(ain.GetEU_AVG(), 0.0);
-  char status = ain.GetStatus(*value_reg);
+  *value_reg = max(ain.GetEU_AVG(), 0.0);  // Lee el valor en EU
+  char status = ain.GetStatus(*value_reg); // Lee el estado del AIN
 
   if (status == asciistatus::H || status == asciistatus::L)
   {
