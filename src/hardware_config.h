@@ -4,8 +4,7 @@ TIM_HandleTypeDef htim3;
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
-void SystemClock_Config(void)
-{
+void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
@@ -38,8 +37,7 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
 }
 
-void MX_GPIO_Init(void)
-{
+void MX_GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   // Habilita relojes de GPIOA, GPIOB y GPIOC
@@ -77,13 +75,10 @@ void MX_GPIO_Init(void)
   pinMode(HW_FAIL, OUTPUT);
 #if defined(CALIBRACION) || defined(DEBUG)
   DBG_PORT.begin(); // inicializa USB CDC
-  while (!DBG_PORT)
-    ;
 #endif
 }
 
-void MX_TIM1_Init(void)
-{
+void MX_TIM1_Init(void) {
   TIM_OC_InitTypeDef sConfigOC = {0};
 
   // Habilita reloj TIM1
@@ -114,8 +109,7 @@ void MX_TIM1_Init(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 }
 
-void MX_TIM3_Init(void)
-{
+void MX_TIM3_Init(void) {
   TIM_OC_InitTypeDef sConfigOC = {0};
 
   // Habilita reloj TIM3
@@ -145,8 +139,7 @@ void MX_TIM3_Init(void)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 }
 
-void MX_ADC1_Init(void)
-{
+void MX_ADC1_Init(void) {
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configuración común del ADC1 */
@@ -162,8 +155,7 @@ void MX_ADC1_Init(void)
   HAL_ADCEx_Calibration_Start(&hadc1); // Calibración de ADC1
 }
 
-void MX_ADC2_Init(void)
-{
+void MX_ADC2_Init(void) {
   ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configuración común del ADC2 */
