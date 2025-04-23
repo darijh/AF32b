@@ -17,6 +17,17 @@
 
 // GLOBAL VARIABLES
 int16_t regs[REGS_SIZE]; // Array de registros
+int16_t run_regs[RW_END];
+namespace asciistatus
+{
+  enum status
+  {
+    D = 68,
+    H = 72,
+    L = 76,
+    N = 78
+  };
+};
 
 // OBJECTS
 HardwareSerial Serial3(PB11, PB10); // RX = PB11, TX = PB10

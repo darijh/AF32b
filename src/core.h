@@ -1,14 +1,3 @@
-int16_t run_regs[RW_END];
-namespace asciistatus
-{
-  enum status
-  {
-    D = 68,
-    H = 72,
-    L = 76,
-    N = 78
-  };
-};
 void CoreInit();
 void Config();
 uint8_t Get_ID(); // Lee el ID del hardware
@@ -262,6 +251,11 @@ void Factory_Reset()
   regs[MB_IHL_A] = MB_DEF_IHL;
   regs[MB_VLL_A] = MB_DEF_VLL;
   regs[MB_ILL_A] = MB_DEF_ILL;
+  regs[MB_VHL_B] = MB_DEF_VHL;
+  regs[MB_IHL_B] = MB_DEF_IHL;
+  regs[MB_VLL_B] = MB_DEF_VLL;
+  regs[MB_ILL_B] = MB_DEF_ILL;
+
   eepr.write(regs, REGS_SIZE, 0, RW_END, 0, eeprom_manager::I16T);
   eepr.write(0, 1, MB_HS_A, eeprom_manager::I16T);    // Reset de Horometro
   eepr.write(0, 1, MB_ROLLS_A, eeprom_manager::I16T); // Reset de Horometro
