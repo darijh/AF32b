@@ -1,9 +1,3 @@
-// Handles globales
-TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim3;
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
-
 void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};

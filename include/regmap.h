@@ -1,5 +1,5 @@
 #define REGS_SIZE 42
-#define RW_END 18
+#define RW_SIZE 19
 #define VOUT_A_BIT 0
 #define IOUT_A_BIT 1
 #define VOUT_B_BIT 2

@@ -1,33 +1,29 @@
 #ifndef PERIODIC_TASK_H
 #define PERIODIC_TASK_H
 
-class PeriodicTask
-{
+class PeriodicTask {
 public:
-    // Constructor que recibe el intervalo en milisegundos
-    PeriodicTask(unsigned long intervalMs)
-        : interval(intervalMs), lastExecution(0), cb(nullptr) {}
+  // Constructor que recibe el intervalo en milisegundos
+  PeriodicTask(unsigned long intervalMs)
+      : interval(intervalMs), lastExecution(0), cb(nullptr) {}
 
-    // Método que debe llamarse periódicamente (por ejemplo desde loop())
-    void run(unsigned long currentMillis)
+  // Método que debe llamarse periódicamente (por ejemplo desde loop())
+  void run(unsigned long currentMillis) {
+    if (cb && (currentMillis - lastExecution >=
+               interval)) // Verifica si ha pasado el intervalo
     {
-        if (cb && (currentMillis - lastExecution >= interval)) // Verifica si ha pasado el intervalo
-        {
-            lastExecution = currentMillis;
-            cb();
-        }
+      lastExecution = currentMillis;
+      cb();
     }
+  }
 
-    // Establece la función callback que se ejecutará periódicamente
-    void setCallback(std::function<void()> newCallback)
-    {
-        cb = newCallback;
-    }
+  // Establece la función callback que se ejecutará periódicamente
+  void setCallback(std::function<void()> newCallback) { cb = newCallback; }
 
 private:
-    unsigned long interval;
-    std::function<void()> cb;
-    unsigned long lastExecution;
+  unsigned long interval;
+  std::function<void()> cb;
+  unsigned long lastExecution;
 };
 
 #endif // PERIODIC_TASK_H

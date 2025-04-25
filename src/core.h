@@ -12,7 +12,6 @@ float Read_Temp();
 uint16_t Set_Duty(int16_t duty_percent);
 void Regulation();
 void Factory_Reset();
-void Save_Changes();
 void Modbus_Listener();
 void OneSecondTask();
 void OneHourTask();
@@ -20,13 +19,10 @@ void OneDayTask();
 void HorACallback();
 void HorBCallback();
 
-void CoreInit()
-{
-  eepr.begin(); // Inicializa el gestor de EEPROM
-  hor_a.Begin(eepr.read<int16_t>(MB_HS_A, eeprom_manager::I16T),
-              eepr.read<int16_t>(MB_ROLLS_A, eeprom_manager::I16T));
-  hor_b.Begin(eepr.read<int16_t>(MB_HS_B, eeprom_manager::I16T),
-              eepr.read<int16_t>(MB_ROLLS_B, eeprom_manager::I16T));
+void CoreInit() {
+  eepr.begin(REGS_SIZE); // Inicializa el gestor de EEPROM
+  hor_a.Begin(eepr.read(MB_HS_A), eepr.read(MB_ROLLS_A));
+  hor_b.Begin(eepr.read(MB_HS_B), eepr.read(MB_ROLLS_B));
   modbus_slave.Begin(&COM_PORT, BAUDRATE,
                      Get_ID()); // Inicializa el puerto serie
   modbus_slave.Enable(true);    // Habilita el puerto serie
@@ -38,28 +34,12 @@ void CoreInit()
       OneSecondTask); // Establece el callback de la tarea de 1 segundo
   one_hour_task.setCallback(
       OneHourTask); // Establece el callback de la tarea de 1 hora
-  one_day_task.setCallback(
-      OneDayTask); // Establece el callback de la tarea de 1 día
-  Config();
-}
-
-void Config()
-{
-  memset(regs, 0, sizeof(regs)); // Limpia el array de registros
-  eepr.read<int16_t>(0, RW_END, eeprom_manager::I16T,
-                     regs); // Lee los registros de la EEPROM
-  for (uint8_t i = 0; i < RW_END; i++)
-  {
-    run_regs[i] = regs[i]; // Copia los registros a run_regs
-  }
-
-  // Vout_a
+  one_day_task.setCallback(OneDayTask); // Establece el callback de la tarea de
+                                        // 1 día Vout_a
   vout_a.SetReads(READS);
   vout_a.SetEnable(true);
   vout_a.SetHiLimitEnable(true);
   vout_a.SetLoLimitEnable(true);
-  vout_a.SetHiLimit(run_regs[MB_VHL_A]);
-  vout_a.SetLoLimit(run_regs[MB_VLL_A]);
   vout_a.SetConstants(VOUT_A_MULT, VOUT_A_OFFSET);
 
   // Iout_a
@@ -67,8 +47,6 @@ void Config()
   iout_a.SetEnable(true);
   iout_a.SetHiLimitEnable(true);
   iout_a.SetLoLimitEnable(true);
-  iout_a.SetHiLimit(run_regs[MB_IHL_A]);
-  iout_a.SetLoLimit(run_regs[MB_ILL_A]);
   iout_a.SetConstants(IOUT_A_MULT, IOUT_A_OFFSET);
 
   // Vout_b
@@ -76,8 +54,6 @@ void Config()
   vout_b.SetEnable(true);
   vout_b.SetHiLimitEnable(true);
   vout_b.SetLoLimitEnable(true);
-  vout_b.SetHiLimit(run_regs[MB_VHL_B]);
-  vout_b.SetLoLimit(run_regs[MB_VLL_B]);
   vout_b.SetConstants(VOUT_B_MUL, VOUT_B_OFFSET);
 
   // Iout_b
@@ -85,9 +61,33 @@ void Config()
   iout_b.SetEnable(true);
   iout_b.SetHiLimitEnable(true);
   iout_b.SetLoLimitEnable(true);
+  iout_b.SetConstants(IOUT_B_MULT, IOUT_B_OFFSET);
+
+  Config();
+}
+
+void Config() {
+  memset(regs, 0, sizeof(regs)); // Limpia el array de registros
+  eepr.read(0, RW_SIZE, regs);   // Lee los registros de la EEPROM
+  for (uint8_t i = 0; i < RW_SIZE; i++) {
+    run_regs[i] = regs[i]; // Copia los registros a run_regs
+  }
+
+  // Vout_a
+  vout_a.SetHiLimit(run_regs[MB_VHL_A]);
+  vout_a.SetLoLimit(run_regs[MB_VLL_A]);
+
+  // Iout_a
+  iout_a.SetHiLimit(run_regs[MB_IHL_A]);
+  iout_a.SetLoLimit(run_regs[MB_ILL_A]);
+
+  // Vout_b
+  vout_b.SetHiLimit(run_regs[MB_VHL_B]);
+  vout_b.SetLoLimit(run_regs[MB_VLL_B]);
+
+  // Iout_b
   iout_b.SetHiLimit(run_regs[MB_IHL_B]);
   iout_b.SetLoLimit(run_regs[MB_ILL_B]);
-  iout_b.SetConstants(IOUT_B_MULT, IOUT_B_OFFSET);
 
   regulator_a.setEnable(run_regs[MB_ENALBLE]);
   regulator_b.setEnable(run_regs[MB_ENALBLE]);
@@ -97,8 +97,7 @@ void Config()
                            regs[MB_IRED_B]);
 }
 
-uint8_t Get_ID()
-{
+uint8_t Get_ID() {
   uint8_t id = 0;
   bitWrite(id, 0, !digitalRead(HW_ID_B0));
   bitWrite(id, 1, !digitalRead(HW_ID_B1));
@@ -108,16 +107,14 @@ uint8_t Get_ID()
 }
 
 uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
-                              uint32_t samplingTime)
-{
+                              uint32_t samplingTime) {
   ADC_ChannelConfTypeDef sConfig = {0};
 
   // Configura el canal y el tiempo de muestreo
   sConfig.Channel = channel;
   sConfig.Rank = ADC_REGULAR_RANK_1; // Siempre el primer rank
   sConfig.SamplingTime = samplingTime;
-  if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
-  {
+  if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK) {
     // Manejo de error
     return 0;
   }
@@ -136,8 +133,7 @@ uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
   return adc_value;
 }
 
-float Read_ADC(uint32_t channel)
-{
+float Read_ADC(uint32_t channel) {
   uint16_t adc_value =
       Read_ADC_Channel_Raw(&hadc2, channel, ADC_SAMPLETIME_28CYCLES_5);
   float val = adc_value * Read_VDDA() / 4095.0f; // Convierte a mV
@@ -145,39 +141,29 @@ float Read_ADC(uint32_t channel)
 }
 
 void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
-                uint8_t alarm_bit, int16_t *alarm_reg, uint32_t &ml_alarm)
-{
+                uint8_t alarm_bit, int16_t *alarm_reg, uint32_t &ml_alarm) {
   *value_reg = max(ain.GetEU_AVG(), 0.0);  // Lee el valor en EU
   char status = ain.GetStatus(*value_reg); // Lee el estado del AIN
 
-  if (status == asciistatus::H || status == asciistatus::L)
-  {
+  if (status == asciistatus::H || status == asciistatus::L) {
     ml_alarm = millis();
     bitSet(*alarm_reg, alarm_bit);
     *status_reg = int(status);
-  }
-  else
-  {
-    if (bitRead(*alarm_reg, alarm_bit))
-    {
-      if (millis() > ml_alarm + 1000)
-      {
+  } else {
+    if (bitRead(*alarm_reg, alarm_bit)) {
+      if (millis() > ml_alarm + 1000) {
         bitClear(*alarm_reg, alarm_bit);
         *status_reg = int(status);
       }
-    }
-    else
-    {
+    } else {
       *status_reg = int(status);
     }
   }
 }
 
-void ADCReadings(uint32_t interval)
-{
+void ADCReadings(uint32_t interval) {
   static uint32_t ml_sample = 0;
-  if (millis() > ml_sample + interval)
-  {
+  if (millis() > ml_sample + interval) {
     ml_sample = millis();
     vout_a.Sample(
         Read_ADC_Channel_Raw(&hadc2, HW_VOUT_A, ADC_SAMPLETIME_28CYCLES_5));
@@ -206,33 +192,32 @@ void ADCReadings(uint32_t interval)
              &regs[MB_ALARM], ml_alarm_iout_b);
 }
 
-float Read_VDDA()
-{
+float Read_VDDA() {
   uint16_t adc_value = Read_ADC_Channel_Raw(&hadc1, ADC_CHANNEL_VREFINT,
                                             ADC_SAMPLETIME_239CYCLES_5);
   float vdda = 4095 * 1200.0f / adc_value;
   return vdda;
 }
 
-float Read_Temp()
-{
+float Read_Temp() {
   uint16_t adc_value = Read_ADC_Channel_Raw(&hadc1, ADC_CHANNEL_TEMPSENSOR,
                                             ADC_SAMPLETIME_239CYCLES_5);
   float temp = 25 + (1430 - (adc_value * Read_VDDA() / 4095.0f)) / 4.3f;
   return temp;
 }
 
-uint16_t Set_Duty(int16_t duty_percent)
-{
+uint16_t Set_Duty(int16_t duty_percent) {
   return map(duty_percent, 0, 10000, 0,
              4095); // Mapea el porcentaje a un valor entre 0 y 4095
 }
 
-void Regulation()
-{
-  /*   regulator_a.update(regs[MB_V_VAL_A], regs[MB_I_VAL_A],
-    regs[MB_IRED_STS]); regulator_b.update(regs[MB_V_VAL_B], regs[MB_I_VAL_B],
-    regs[MB_IRED_STS]); regs[MB_V_DUTY_A] = regulator_a.getVoltageDuty();
+void Regulation() {
+  static uint32_t ml_reg = 0;
+  if (millis() > ml_reg + 20) {
+    ml_reg = millis();
+    regulator_a.update(regs[MB_V_VAL_A], regs[MB_I_VAL_A], regs[MB_IRED_STS]);
+    regulator_b.update(regs[MB_V_VAL_B], regs[MB_I_VAL_B], regs[MB_IRED_STS]);
+    regs[MB_V_DUTY_A] = regulator_a.getVoltageDuty();
     regs[MB_I_DUTY_A] = regulator_a.getCurrentDuty();
     regs[MB_V_DUTY_B] = regulator_b.getVoltageDuty();
     regs[MB_I_DUTY_B] = regulator_b.getCurrentDuty();
@@ -241,11 +226,11 @@ void Regulation()
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, Set_Duty(regs[MB_V_DUTY_B]));
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, Set_Duty(regs[MB_I_DUTY_B]));
     bitWrite(regs[MB_ALARM], REG_A_BIT, regulator_a.isNotReachingSetpoint());
-    bitWrite(regs[MB_ALARM], REG_B_BIT, regulator_b.isNotReachingSetpoint()); */
+    bitWrite(regs[MB_ALARM], REG_B_BIT, regulator_b.isNotReachingSetpoint());
+  }
 }
 
-void Factory_Reset()
-{
+void Factory_Reset() {
   memset(regs, 0, sizeof(regs));
   regs[MB_VHL_A] = MB_DEF_VHL;
   regs[MB_IHL_A] = MB_DEF_IHL;
@@ -256,55 +241,40 @@ void Factory_Reset()
   regs[MB_VLL_B] = MB_DEF_VLL;
   regs[MB_ILL_B] = MB_DEF_ILL;
 
-  eepr.write(regs, REGS_SIZE, 0, RW_END, 0, eeprom_manager::I16T);
-  eepr.write(0, 1, MB_HS_A, eeprom_manager::I16T);    // Reset de Horometro
-  eepr.write(0, 1, MB_ROLLS_A, eeprom_manager::I16T); // Reset de Horometro
-  eepr.write(0, 1, MB_HS_B, eeprom_manager::I16T);    // Reset de Horometro
-  eepr.write(0, 1, MB_ROLLS_B, eeprom_manager::I16T); // Reset de Horometro
+  eepr.write(regs, REGS_SIZE, 0, RW_SIZE, 0);
+  eepr.write(MB_HS_A, 0);    // Reset de Horometro
+  eepr.write(MB_ROLLS_A, 0); // Reset de Horometro
+  eepr.write(MB_HS_B, 0);    // Reset de Horometro
+  eepr.write(MB_ROLLS_B, 0); // Reset de Horometro
   hor_a.Reset();
   hor_b.Reset();
 }
 
-void Save_Changes()
-{
-  eepr.write(regs, REGS_SIZE, 0, RW_END, 0, eeprom_manager::I16T);
-}
-
-void Modbus_Listener()
-{
+void Modbus_Listener() {
   modbus_slave.ChangesProcessed();
-  if (regs[MB_APPLY])
-  {
-    if (regs[MB_FACTORY_RESET])
-    {
+  if (regs[MB_APPLY]) {
+    if (regs[MB_FACTORY_RESET]) {
       Factory_Reset();
-    }
-    else
-    {
+    } else {
       regs[MB_APPLY] = 0;
-      Save_Changes();
+      eepr.write(regs, REGS_SIZE, 0, RW_SIZE, 0);
     }
     Config();
   }
-  if (regs[MB_CANCEL])
-  {
+  if (regs[MB_CANCEL]) {
     Config();
   }
 }
 
-void OneSecondTask()
-{
+void OneSecondTask() {
   digitalWrite(HW_STS, modbus_slave.active);
   digitalWrite(HW_FAIL, (regs[MB_ALARM]) ? HIGH : LOW);
   digitalWrite(HW_OK, (regs[MB_ALARM]) ? LOW : HIGH);
-  regs[MB_TEMP] = Read_Temp() * 100.0f; // Lee la temperatura
-  if (run_regs[MB_IRED_NC_MODE])
-  {                                            // Modo NC
+  regs[MB_TEMP] = Read_Temp() * 100.0f;        // Lee la temperatura
+  if (run_regs[MB_IRED_NC_MODE]) {             // Modo NC
     regs[MB_IRED_STS] = !digitalRead(HW_CTRL); // Lee el estado del control
-  }
-  else
-  {                                           // Modo NO
-    regs[MB_IRED_STS] = digitalRead(HW_CTRL); // Lee el estado del control
+  } else {                                     // Modo NO
+    regs[MB_IRED_STS] = digitalRead(HW_CTRL);  // Lee el estado del control
   }
 
   // HOROMETRO A
@@ -346,47 +316,41 @@ void OneSecondTask()
   DBG_PORT.print(" V | Iout_A: ");
   DBG_PORT.print(regs[MB_I_VAL_A]);
   DBG_PORT.println(" mA");
-  DBG_PORT.print("Vout_B: ");
-  DBG_PORT.print(regs[MB_V_VAL_B] / 100.0f, 2);
-  DBG_PORT.print(" V | Iout_B: ");
-  DBG_PORT.print(regs[MB_I_VAL_B]);
-  DBG_PORT.println(" mA");
-  DBG_PORT.print("Ired_STS_B: ");
-  DBG_PORT.print((regs[MB_IRED_STS]) ? "ON" : "OFF");
-  DBG_PORT.print(" | ID: ");
-  DBG_PORT.println(Get_ID());
-  DBG_PORT.println();
-  for (int i = 0; i < REGS_SIZE; i++)
-  {
-    DBG_PORT.print("Reg[");
-    DBG_PORT.print(i);
-    DBG_PORT.print("]: ");
-    DBG_PORT.println(regs[i]);
-  }
+  DBG_PORT.print("V_Duty_A: ");
+  DBG_PORT.print(regs[MB_V_DUTY_A]);
+  DBG_PORT.print(" | I_Duty_A: ");
+  DBG_PORT.println(regs[MB_I_DUTY_A]);
+  DBG_PORT.print("Current Mode: ");
+  DBG_PORT.println((regulator_a.isCurrentMode()) ? "ON" : "OFF");
+  /*   DBG_PORT.print("Vout_B: ");
+    DBG_PORT.print(regs[MB_V_VAL_B] / 100.0f, 2);
+    DBG_PORT.print(" V | Iout_B: ");
+    DBG_PORT.print(regs[MB_I_VAL_B]);
+    DBG_PORT.println(" mA");
+    DBG_PORT.print("Ired_STS_B: ");
+    DBG_PORT.print((regs[MB_IRED_STS]) ? "ON" : "OFF");
+    DBG_PORT.print(" | ID: ");
+    DBG_PORT.println(Get_ID()); */
   DBG_PORT.println("=====================================");
 #endif
 #endif
 }
 
-void OneHourTask()
-{
+void OneHourTask() {
   HAL_ADCEx_Calibration_Start(&hadc1); // Calibración de ADC1
   HAL_ADCEx_Calibration_Start(&hadc2); // Calibración de ADC2
 }
 
-void OneDayTask()
-{
+void OneDayTask() {
   NVIC_SystemReset(); // Reinicia el microcontrolador
 }
 
-void HorACallback()
-{
-  eepr.write(hor_a.GetHs(), 1, MB_HS_A, eeprom_manager::I16T);
-  eepr.write(hor_a.GetRolls(), 1, MB_ROLLS_A, eeprom_manager::I16T);
+void HorACallback() {
+  eepr.write(MB_HS_A, hor_a.GetHs());
+  eepr.write(MB_ROLLS_A, hor_a.GetRolls());
 }
 
-void HorBCallback()
-{
-  eepr.write(hor_b.GetHs(), 1, MB_HS_B, eeprom_manager::I16T);
-  eepr.write(hor_b.GetRolls(), 1, MB_ROLLS_B, eeprom_manager::I16T);
+void HorBCallback() {
+  eepr.write(MB_HS_B, hor_b.GetHs());
+  eepr.write(MB_ROLLS_B, hor_b.GetRolls());
 }
