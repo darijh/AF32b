@@ -50,13 +50,18 @@ void PowerController::update(double voltageReading, double currentReading,
   double errorI = relativeError(currentReading, activeCurrentSetpoint);
 
   /*   // Lógica de modo
-    if (_currentMode) {
-      if (errorI > 0.08 && errorV < 0.02) {
+    if (_currentMode)
+    {
+      if (errorI > 0.08 && errorV < 0.02)
+      {
         _currentMode = false;
         _pidCurrent.reset();
       }
-    } else {
-      if (errorI < _hysteresis) {
+    }
+    else
+    {
+      if (errorI < _hysteresis)
+      {
         _currentMode = true;
         _pidVoltage.reset();
       }

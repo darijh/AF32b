@@ -16,7 +16,17 @@
 #define HW_OK PB9
 #define HW_FAIL PB8
 
-#define READS 20 // Número de lecturas para promediar
+#define READS 20              // Número de lecturas para promediar
+#define READ_INTERVAL 100     // Intervalo de lectura de ADC
+#define REG_ERR_THR 10        // Umbral de error para el regulador
+#define REG_ERR_TIMEOUT 20000 // Tiempo de espera para el timeout de error
+
+#define VKp 0.9
+#define VKi 12
+#define VKd 0
+#define IKp 0.9
+#define Iki 12
+#define Ikd 0
 
 // HW CONFIG
 #define DBG_PORT Serial

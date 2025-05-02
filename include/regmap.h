@@ -6,6 +6,8 @@
 #define IOUT_B_BIT 3
 #define REG_A_BIT 4
 #define REG_B_BIT 5
+#define MAX_DUTY 10000
+#define MIN_DUTY 0
 
 // DEFAULT
 #define MB_DEF_VHL VMAX

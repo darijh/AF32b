@@ -20,7 +20,7 @@ void PID::reset()
 double PID::compute(double input, double setpoint)
 {
   double error = setpoint - input;
-  _integral += error;
+  _integral = constrain(_integral + error * _ki * .002, _outputMin, _outputMax);
 
   double derivative = 0;
   if (!_firstCompute)
@@ -33,8 +33,16 @@ double PID::compute(double input, double setpoint)
   }
 
   _prevError = error;
-
-  double output = _kp * error + _ki * _integral + _kd * derivative;
+  // Calculate the output using PID formula
+  double output = _kp * error + _integral + (_kd / .002) * derivative;
+  Serial.print("Error: ");
+  Serial.print(error);
+  Serial.print(" Integral: ");
+  Serial.print(_integral);
+  Serial.print(" Derivative: ");
+  Serial.print(derivative);
+  Serial.print(" Output: ");
+  Serial.println(output);
 
   if (output > _outputMax)
     output = _outputMax;
