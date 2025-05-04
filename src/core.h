@@ -1,4 +1,7 @@
-void CoreInit() // Inicializa el sistema
+/**
+ * @brief Inicializa el sistema configurando los módulos principales.
+ */
+void CoreInit()
 {
   eepr.begin(REGS_SIZE);                                  // Inicializa el gestor de EEPROM
   hor_a.Begin(eepr.read(MB_HS_A), eepr.read(MB_ROLLS_A)); // Inicializa el horometro A
@@ -51,7 +54,10 @@ void CoreInit() // Inicializa el sistema
   Config(); // Configura el sistema
 }
 
-void Config() // Configura el sistema
+/**
+ * @brief Configura el sistema con valores iniciales o restaurados.
+ */
+void Config()
 {
   memset(regs, 0, sizeof(regs)); // Limpia el array de registros
   eepr.read(0, RW_SIZE, regs);   // Lee los registros de la EEPROM
@@ -86,7 +92,11 @@ void Config() // Configura el sistema
   pid_i_b.reset();              // Resetea el PID
 }
 
-uint8_t Get_ID() // Lee el ID del hardware
+/**
+ * @brief Lee el ID del hardware desde los dip switches.
+ * @return ID del hardware.
+ */
+uint8_t Get_ID()
 {
   uint8_t id = 0;                          // ID del hardware
   bitWrite(id, 0, !digitalRead(HW_ID_B0)); // setea el bit 0 segun el estado del dip switch
@@ -96,8 +106,15 @@ uint8_t Get_ID() // Lee el ID del hardware
   return id;                               // retorna el id
 }
 
+/**
+ * @brief Lee un canal del ADC en modo crudo.
+ * @param hadc Manejador del ADC.
+ * @param channel Canal a leer.
+ * @param samplingTime Tiempo de muestreo.
+ * @return Valor crudo leído del ADC.
+ */
 uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
-                              uint32_t samplingTime) // Lee el valor del ADC
+                              uint32_t samplingTime)
 {
   ADC_ChannelConfTypeDef sConfig = {0};                // Estructura de configuración del ADC
   sConfig.Channel = channel;                           // Canal a leer
@@ -115,7 +132,12 @@ uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
   return adc_value;                            // Retorna el valor convertido
 }
 
-float Read_ADC(uint32_t channel) // Lee el valor del ADC y lo convierte a mV
+/**
+ * @brief Lee el valor del ADC y lo convierte a milivoltios.
+ * @param channel Canal del ADC a leer.
+ * @return Valor convertido en milivoltios.
+ */
+float Read_ADC(uint32_t channel)
 {
   uint16_t adc_value =
       Read_ADC_Channel_Raw(&hadc2, channel, ADC_SAMPLETIME_28CYCLES_5); // Lee el valor del ADC
@@ -123,8 +145,17 @@ float Read_ADC(uint32_t channel) // Lee el valor del ADC y lo convierte a mV
   return val;                                                           // Retorna el valor convertido
 }
 
+/**
+ * @brief Maneja los AIN y actualiza los registros correspondientes.
+ * @param ain Referencia al objeto AinHandler.
+ * @param value_reg Registro de valor.
+ * @param status_reg Registro de estado.
+ * @param alarm_bit Bit de alarma.
+ * @param alarm_reg Registro de alarma.
+ * @param ml_alarm Tiempo de alarma.
+ */
 void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
-                uint8_t alarm_bit, int16_t *alarm_reg, uint32_t &ml_alarm) // Maneja los AIN
+                uint8_t alarm_bit, int16_t *alarm_reg, uint32_t &ml_alarm)
 {
   *value_reg = max(ain.GetEU_AVG(), 0.0);  // obtiene el valor en EU
   char status = ain.GetStatus(*value_reg); // obtiene el estado del AIN
@@ -152,7 +183,11 @@ void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
   }
 }
 
-void ADCReadings(uint32_t interval) // Lee los valores del ADC
+/**
+ * @brief Lee los valores del ADC y actualiza los AIN.
+ * @param interval Intervalo de tiempo entre lecturas.
+ */
+void ADCReadings(uint32_t interval)
 {
   static uint32_t ml_sample = 0;       // Guarda el tiempo de la última lectura
   if (micros() > ml_sample + interval) // Si ha pasado el intervalo
@@ -173,7 +208,11 @@ void ADCReadings(uint32_t interval) // Lee los valores del ADC
   iout_b.Run(); // Procesa el valor del ADC
 }
 
-float Read_VDDA() // Lee el valor de VDDA
+/**
+ * @brief Lee el valor de VDDA y lo convierte a milivoltios.
+ * @return Valor de VDDA en milivoltios.
+ */
+float Read_VDDA()
 {
   uint16_t adc_value = Read_ADC_Channel_Raw(&hadc1, ADC_CHANNEL_VREFINT,
                                             ADC_SAMPLETIME_239CYCLES_5); // Lee el valor del ADC
@@ -181,7 +220,11 @@ float Read_VDDA() // Lee el valor de VDDA
   return vdda;
 }
 
-float Read_Temp() // Lee la temperatura del microcontrolador
+/**
+ * @brief Lee la temperatura del microcontrolador y la convierte a grados Celsius.
+ * @return Temperatura en grados Celsius.
+ */
+float Read_Temp()
 {
   uint16_t adc_value = Read_ADC_Channel_Raw(&hadc1, ADC_CHANNEL_TEMPSENSOR,
                                             ADC_SAMPLETIME_239CYCLES_5); // Lee el valor del ADC
@@ -189,16 +232,25 @@ float Read_Temp() // Lee la temperatura del microcontrolador
   return temp;
 }
 
-uint16_t Set_Duty(int16_t duty_percent) // Establece el duty cycle
+/**
+ * @brief Convierte un porcentaje de duty cycle a un valor de PWM.
+ * @param duty_percent Porcentaje de duty cycle (0-10000).
+ * @return Valor de PWM correspondiente (0-4095).
+ */
+uint16_t Set_Duty(int16_t duty_percent)
 {
+  duty_percent = constrain(duty_percent, 0, 10000); // Limita el rango
   return map(duty_percent, 0, 10000, 0,
              4095); // Mapea el porcentaje a un valor entre 0 y 4095
 }
 
-void Regulation() // Regula las salidas
+/**
+ * @brief Configura el sistema de regulación de voltaje y corriente.
+ */
+void Regulation()
 {
-  static uint32_t ml_alarm_vout_a = 0, ml_alarm_iout_a = 0;
-  static uint32_t ml_alarm_vout_b = 0, ml_alarm_iout_b = 0;
+  static uint32_t ml_alarm_vout_a = 0, ml_alarm_iout_a = 0; // Variables para almacenar el tiempo de alarma
+  static uint32_t ml_alarm_vout_b = 0, ml_alarm_iout_b = 0; // Variables para almacenar el tiempo de alarma
   HandleAins(vout_a, &regs[MB_V_VAL_A], &regs[MB_V_STS_A], VOUT_A_BIT,
              &regs[MB_ALARM], ml_alarm_vout_a); // Maneja el AIN
   HandleAins(iout_a, &regs[MB_I_VAL_A], &regs[MB_I_STS_A], IOUT_A_BIT,
@@ -248,7 +300,10 @@ void Regulation() // Regula las salidas
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, Set_Duty(regs[MB_I_DUTY_B])); // Configura el pwm segun el duty de corriente en salida B
 }
 
-void Factory_Reset() // Resetea la configuración de fábrica
+/**
+ * @brief // Resetea la configuración de fábrica.
+ */
+void Factory_Reset()
 {
   memset(regs, 0, sizeof(regs));              // Reinicia todos los registro
   regs[MB_VHL_A] = MB_DEF_VHL;                // Establece el valor por defecto
@@ -268,34 +323,41 @@ void Factory_Reset() // Resetea la configuración de fábrica
   hor_b.Reset();                              // Reset Horometro B
 }
 
-void Modbus_Listener() // Listener de Modbus
+/**
+ * @brief Listener para manejar cambios en los registros Modbus.
+ */
+void Modbus_Listener()
 {
-  modbus_slave.ChangesProcessed();
-  if (regs[MB_APPLY])
+  modbus_slave.ChangesProcessed(); // Procesa los cambios
+  if (regs[MB_APPLY])              // Si se aplica la configuración
   {
-    if (regs[MB_FACTORY_RESET])
+    if (regs[MB_FACTORY_RESET]) // Si se aplica el reset de fábrica
+
     {
-      Factory_Reset();
+      Factory_Reset(); // Resetea la configuración de fábrica
     }
-    else
+    else // Si no se aplica el reset de fábrica
     {
-      regs[MB_APPLY] = 0;
-      eepr.write(regs, REGS_SIZE, 0, RW_SIZE, 0);
+      regs[MB_APPLY] = 0;                         // Limpia el flag de aplicar configuración
+      eepr.write(regs, REGS_SIZE, 0, RW_SIZE, 0); // Guarda en EEPROM los registros RW
     }
-    Config();
+    Config(); // Configura el sistema
   }
-  if (regs[MB_CANCEL])
+  if (regs[MB_CANCEL]) // Si se cancela la configuración
   {
-    Config();
+    Config(); // Configura el sistema
   }
 }
 
-void OneSecondTask() // Tarea de 1 segundo
+/**
+ * @brief Tareas de 1 segundo.
+ */
+void OneSecondTask()
 {
-  digitalWrite(HW_STS, modbus_slave.active);
-  digitalWrite(HW_FAIL, (regs[MB_ALARM]) ? HIGH : LOW);
-  digitalWrite(HW_OK, (regs[MB_ALARM]) ? LOW : HIGH);
-  regs[MB_TEMP] = Read_Temp() * 100.0f; // Lee la temperatura
+  digitalWrite(HW_STS, modbus_slave.active);            // Enciende el led de estado
+  digitalWrite(HW_FAIL, (regs[MB_ALARM]) ? HIGH : LOW); // Enciende el led de fallo
+  digitalWrite(HW_OK, (regs[MB_ALARM]) ? LOW : HIGH);   // Enciende el led de OK
+  regs[MB_TEMP] = Read_Temp() * 100.0f;                 // Lee la temperatura
   if (run_regs[MB_IRED_NC_MODE])
   {                                            // Modo NC
     regs[MB_IRED_STS] = !digitalRead(HW_CTRL); // Lee el estado del control
@@ -306,84 +368,94 @@ void OneSecondTask() // Tarea de 1 segundo
   }
 
   // HOROMETRO A
-  hor_a.Count();
+  hor_a.Count(); // Cuenta el horometro
   bool hor_a_status =
-      (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_A] > IMAX * 0.01f) ? true
-                                                                  : false;
-  hor_a.SetEnable(hor_a_status);
-  regs[MB_HS_STS_A] = hor_a_status;
-  regs[MB_HS_A] = hor_a.GetHs();
-  regs[MB_DHS_A] = hor_a.GetDh();
-  regs[MB_ROLLS_A] = hor_a.GetRolls();
+      (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_A] > IMAX * 0.01f); // Establece el estado del horometro
+  hor_a.SetEnable(hor_a_status);                                   // Habilita el horometro
+  regs[MB_HS_STS_A] = hor_a_status;                                // Establece el estado del horometro
+  regs[MB_HS_A] = hor_a.GetHs();                                   // Establece el valor del horometro
+  regs[MB_DHS_A] = hor_a.GetDh();                                  // Establece el valor del horometro
+  regs[MB_ROLLS_A] = hor_a.GetRolls();                             // Establece el valor del horometro
 
   // HOROMETRO B
-  hor_b.Count();
+  hor_b.Count(); // Cuenta el horometro
   bool hor_b_status =
-      (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_B] > IMAX * 0.01f) ? true
-                                                                  : false;
-  hor_b.SetEnable(hor_b_status);
-  regs[MB_HS_STS_B] = hor_b_status;
-  regs[MB_HS_B] = hor_b.GetHs();
-  regs[MB_DHS_B] = hor_b.GetDh();
-  regs[MB_ROLLS_B] = hor_b.GetRolls();
+      (regs[MB_IRED_STS] == 0 && regs[MB_I_VAL_B] > IMAX * 0.01f); // Establece el estado del horometro
+  hor_b.SetEnable(hor_b_status);                                   // Habilita el horometro
+  regs[MB_HS_STS_B] = hor_b_status;                                // Establece el estado del horometro
+  regs[MB_HS_B] = hor_b.GetHs();                                   // Establece el valor del horometro
+  regs[MB_DHS_B] = hor_b.GetDh();                                  // Establece el valor del horometro
+  regs[MB_ROLLS_B] = hor_b.GetRolls();                             // Establece el valor del horometro
 
-#ifdef CALIBRACION
-  DBG_PORT.print("Vout_a: ");
-  DBG_PORT.print(vout_a.GetADC_AVG());
-  DBG_PORT.print(" Iout_a: ");
-  DBG_PORT.print(iout_a.GetADC_AVG());
-  DBG_PORT.print(" Vout_b: ");
-  DBG_PORT.print(vout_b.GetADC_AVG());
-  DBG_PORT.print(" Iout_b: ");
-  DBG_PORT.println(iout_b.GetADC_AVG());
+#ifdef CALIBRACION                       // Si se habilita la calibración
+  DBG_PORT.print("Vout_a: ");            // Debug
+  DBG_PORT.print(vout_a.GetADC_AVG());   // Debug
+  DBG_PORT.print(" Iout_a: ");           // Debug
+  DBG_PORT.print(iout_a.GetADC_AVG());   // Debug
+  DBG_PORT.print(" Vout_b: ");           // Debug
+  DBG_PORT.print(vout_b.GetADC_AVG());   // Debug
+  DBG_PORT.print(" Iout_b: ");           // Debug
+  DBG_PORT.println(iout_b.GetADC_AVG()); // Debug
 #else
-#ifdef DEBUG
-  DBG_PORT.print("Vout_A: ");
-  DBG_PORT.print(regs[MB_V_VAL_A] / 100.0f, 2);
-  DBG_PORT.print(" V | Iout_A: ");
-  DBG_PORT.print(regs[MB_I_VAL_A]);
-  DBG_PORT.println(" mA");
-  DBG_PORT.print("V_Duty_A: ");
-  DBG_PORT.print(regs[MB_V_DUTY_A]);
-  DBG_PORT.print(" | I_Duty_A: ");
-  DBG_PORT.println(regs[MB_I_DUTY_A]);
-  DBG_PORT.print("Vout_B: ");
-  DBG_PORT.print(regs[MB_V_VAL_B] / 100.0f, 2);
-  DBG_PORT.print(" V | Iout_B: ");
-  DBG_PORT.print(regs[MB_I_VAL_B]);
-  DBG_PORT.println(" mA");
-  DBG_PORT.print("V_Duty_B: ");
-  DBG_PORT.print(regs[MB_V_DUTY_B]);
-  DBG_PORT.print(" | I_Duty_B: ");
-  DBG_PORT.println(regs[MB_I_DUTY_B]);
-  DBG_PORT.print("Ired_STS_B: ");
-  DBG_PORT.print((regs[MB_IRED_STS]) ? "ON" : "OFF");
-  DBG_PORT.print(" | ID: ");
-  DBG_PORT.println(Get_ID());
-  DBG_PORT.println("=====================================");
+#ifdef DEBUG // Si se habilita el debug
+  DBG_PORT.print("Vout_A: ");                                // Debug
+  DBG_PORT.print(regs[MB_V_VAL_A] / 100.0f, 2);              // Debug
+  DBG_PORT.print(" V | Iout_A: ");                           // Debug
+  DBG_PORT.print(regs[MB_I_VAL_A]);                          // Debug
+  DBG_PORT.println(" mA");                                   // Debug
+  DBG_PORT.print("V_Duty_A: ");                              // Debug
+  DBG_PORT.print(regs[MB_V_DUTY_A]);                         // Debug
+  DBG_PORT.print(" | I_Duty_A: ");                           // Debug
+  DBG_PORT.println(regs[MB_I_DUTY_A]);                       // Debug
+  DBG_PORT.print("Vout_B: ");                                // Debug
+  DBG_PORT.print(regs[MB_V_VAL_B] / 100.0f, 2);              // Debug
+  DBG_PORT.print(" V | Iout_B: ");                           // Debug
+  DBG_PORT.print(regs[MB_I_VAL_B]);                          // Debug
+  DBG_PORT.println(" mA");                                   // Debug
+  DBG_PORT.print("V_Duty_B: ");                              // Debug
+  DBG_PORT.print(regs[MB_V_DUTY_B]);                         // Debug
+  DBG_PORT.print(" | I_Duty_B: ");                           // Debug
+  DBG_PORT.println(regs[MB_I_DUTY_B]);                       // Debug
+  DBG_PORT.print("Ired_STS_B: ");                            // Debug
+  DBG_PORT.print((regs[MB_IRED_STS]) ? "ON" : "OFF");        // Debug
+  DBG_PORT.print(" | ID: ");                                 // Debug
+  DBG_PORT.println(Get_ID());                                // Debug
+  DBG_PORT.println("====================================="); // Debug
 #endif
 #endif
 }
 
-void OneHourTask() // Tarea de 1 hora
+/**
+ * @brief Tareas de 1 hora.
+ */
+void OneHourTask()
 {
   HAL_ADCEx_Calibration_Start(&hadc1); // Calibración de ADC1
   HAL_ADCEx_Calibration_Start(&hadc2); // Calibración de ADC2
 }
 
-void OneDayTask() // Tarea de 1 día
+/**
+ * @brief Tareas de 1 día.
+ */
+void OneDayTask()
 {
   NVIC_SystemReset(); // Reinicia el microcontrolador
 }
 
-void HorACallback() // Callback de Horometro A
+/**
+ * @brief Callback para el horómetro A.
+ */
+void HorACallback()
 {
-  eepr.write(MB_HS_A, hor_a.GetHs());
-  eepr.write(MB_ROLLS_A, hor_a.GetRolls());
+  eepr.write(MB_HS_A, hor_a.GetHs());       // Guarda el valor del horometro A en EEPROM
+  eepr.write(MB_ROLLS_A, hor_a.GetRolls()); // Guarda el valor del horometro A en EEPROM
 }
 
-void HorBCallback() // Callback de Horometro B
+/**
+ * @brief Callback para el horómetro B.
+ */
+void HorBCallback()
 {
-  eepr.write(MB_HS_B, hor_b.GetHs());
-  eepr.write(MB_ROLLS_B, hor_b.GetRolls());
+  eepr.write(MB_HS_B, hor_b.GetHs());       // Guarda el valor del horometro B en EEPROM
+  eepr.write(MB_ROLLS_B, hor_b.GetRolls()); // Guarda el valor del horometro B en EEPROM
 }
