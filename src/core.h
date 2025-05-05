@@ -59,7 +59,10 @@ void CoreInit()
  */
 void Config()
 {
-
+pid_v_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
+pid_i_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
+pid_v_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
+pid_i_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
   memset(regs, 0, sizeof(regs)); // Limpia el array de registros
   eepr.read(0, RW_SIZE, regs);   // Lee los registros de la EEPROM
   for (uint8_t i = 0; i < RW_SIZE; i++)
