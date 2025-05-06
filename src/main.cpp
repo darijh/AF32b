@@ -35,18 +35,18 @@ namespace asciistatus // Definición de los estados ASCII
 };
 
 // OBJECTS
-HardwareSerial Serial3(PB11, PB10);                                // RX = PB11, TX = PB10
-EepromSTM32 eepr;                                                  // Objeto para la EEPROM
-Slave<int16_t, HardwareSerial> modbus_slave;                       // Objeto Modbus
-AinHandler vout_a, iout_a, vout_b, iout_b;                         // Objetos para manejar entradas analógicas
-Horometer hor_a, hor_b;                                            // Objetos para manejar horómetros
-PeriodicTask one_second_task(1000);                                // Tarea periódica de 1 segundo
-PeriodicTask one_hour_task(3600000);                               // Tarea periódica de 1 hora
-PeriodicTask one_day_task(86400000);                               // Tarea periódica de 1 día
-PID pid_v_a(VKp, VKi, VKd, (READS * READ_INTERVAL * pow(10, -6))); // PID para Vout_A
-PID pid_i_a(IKp, Iki, Ikd, (READS * READ_INTERVAL * pow(10, -6))); // PID para Iout_A
-PID pid_v_b(VKp, VKi, VKd, (READS * READ_INTERVAL * pow(10, -6))); // PID para Vout_B
-PID pid_i_b(IKp, Iki, Ikd, (READS * READ_INTERVAL * pow(10, -6))); // PID para Iout_B
+HardwareSerial Serial3(PB11, PB10);          // RX = PB11, TX = PB10
+EepromSTM32 eepr;                            // Objeto para la EEPROM
+Slave<int16_t, HardwareSerial> modbus_slave; // Objeto Modbus
+AinHandler vout_a, iout_a, vout_b, iout_b;   // Objetos para manejar entradas analógicas
+Horometer hor_a, hor_b;                      // Objetos para manejar horómetros
+PeriodicTask one_second_task(1000);          // Tarea periódica de 1 segundo
+PeriodicTask one_hour_task(3600000);         // Tarea periódica de 1 hora
+PeriodicTask one_day_task(86400000);         // Tarea periódica de 1 día
+PID pid_v_a(VKp, VKi, VKd);                  // PID para Vout_A
+PID pid_i_a(IKp, Iki, Ikd);                  // PID para Iout_A
+PID pid_v_b(VKp, VKi, VKd);                  // PID para Vout_B
+PID pid_i_b(IKp, Iki, Ikd);                  // PID para Iout_B
 
 // CORE FUNCTION DECLARATIONS
 void CoreInit();  // Inicializa el núcleo

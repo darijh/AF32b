@@ -59,10 +59,6 @@ void CoreInit()
  */
 void Config()
 {
-pid_v_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
-pid_i_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
-pid_v_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
-pid_i_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
   memset(regs, 0, sizeof(regs)); // Limpia el array de registros
   eepr.read(0, RW_SIZE, regs);   // Lee los registros de la EEPROM
   for (uint8_t i = 0; i < RW_SIZE; i++)
@@ -86,15 +82,15 @@ pid_i_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
   iout_b.SetHiLimit(run_regs[MB_IHL_B]); // Límite superior
   iout_b.SetLoLimit(run_regs[MB_ILL_B]); // Límite inferior
 
-  regs[MB_V_DUTY_A] = MIN_DUTY; // Inicializa el duty cycle
-  regs[MB_I_DUTY_A] = MIN_DUTY; // Inicializa el duty cycle
-  regs[MB_V_DUTY_B] = MIN_DUTY; // Inicializa el duty cycle
-  regs[MB_I_DUTY_B] = MIN_DUTY; // Inicializa el duty cycle
-  pid_v_a.reset();              // Resetea el PID
-  pid_i_a.reset();              // Resetea el PID
-  pid_v_b.reset();              // Resetea el PID
-  pid_i_b.reset();              // Resetea el PID
-    pid_v_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
+  regs[MB_V_DUTY_A] = MIN_DUTY;        // Inicializa el duty cycle
+  regs[MB_I_DUTY_A] = MIN_DUTY;        // Inicializa el duty cycle
+  regs[MB_V_DUTY_B] = MIN_DUTY;        // Inicializa el duty cycle
+  regs[MB_I_DUTY_B] = MIN_DUTY;        // Inicializa el duty cycle
+  pid_v_a.reset();                     // Resetea el PID
+  pid_i_a.reset();                     // Resetea el PID
+  pid_v_b.reset();                     // Resetea el PID
+  pid_i_b.reset();                     // Resetea el PID
+  pid_v_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
   pid_i_a.setEnable(regs[MB_ENALBLE]); // Habilita el PID
   pid_v_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
   pid_i_b.setEnable(regs[MB_ENALBLE]); // Habilita el PID
@@ -280,7 +276,15 @@ void Regulation()
     double i_setpoint_a =
         regs[MB_IRED_STS] ? run_regs[MB_IRED_A] : run_regs[MB_ISET_A]; // Establece el setpoint de corriente
     double i_setpoint_b =
-        regs[MB_IRED_STS] ? run_regs[MB_IRED_B] : run_regs[MB_ISET_B];          // Establece el setpoint de corriente
+        regs[MB_IRED_STS] ? run_regs[MB_IRED_B] : run_regs[MB_ISET_B]; // Establece el setpoint de corriente
+    static double vset_ramp_a = 0;
+    static double iset_ramp_a = 0;
+    static double vset_ramp_b = 0;
+    static double iset_ramp_b = 0;
+
+    pid_v_a.stop(pid_i_a.atSetPoint()); // Detiene el PID de voltaje si la corriente está en el setpoint
+    Serial.print("integral A: ");
+    Serial.println(pid_v_a.getIntegral());                                      // Imprime el valor integral del PID de voltaje A
     regs[MB_V_DUTY_A] = pid_v_a.compute(regs[MB_V_VAL_A], run_regs[MB_VSET_A]); // Calcula el duty cycle de la tensión de la salida A
     regs[MB_I_DUTY_A] = pid_i_a.compute(regs[MB_I_VAL_A], i_setpoint_a);        // Calcula el duty cycle de la corriente de la salida A
     regs[MB_V_DUTY_B] = pid_v_b.compute(regs[MB_V_VAL_B], run_regs[MB_VSET_B]); // Calcula el duty cycle de la tensión de la salida B

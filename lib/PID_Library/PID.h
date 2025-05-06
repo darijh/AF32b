@@ -16,14 +16,14 @@ public:
    * @param kd Ganancia derivativa.
    * @param time_step Intervalo de tiempo entre cálculos (en segundos).
    */
-  PID(double kp, double ki, double kd, double time_step);
+  PID(double kp, double ki, double kd);
 
   /**
    * @brief Establece los límites de la salida del controlador.
    * @param min Valor mínimo de la salida.
    * @param max Valor máximo de la salida.
    */
-  void setOutputLimits(double min, double max);
+  void setOutputLimits(double min, double max, double threshold = 1);
 
   /**
    * @brief Habilita o deshabilita el controlador PID.
@@ -47,10 +47,28 @@ public:
   double compute(double input, double setpoint);
 
   /**
+   * @brief Detiene el controlador PID.
+   * @param stop `true` para detener, `false` para continuar.
+   */
+  void stop(bool stop = false);
+
+  /**
    * @brief Obtiene el estado de la alarma.
    * @return `true` si la alarma está activa, `false` en caso contrario.
    */
   bool getAlarm();
+
+  /**
+   * @brief Obtiene el valor integral del controlador PID.
+   * @return Valor integral del controlador PID.
+   */
+  double getIntegral();
+
+  /**
+   * @brief Verifica si el controlador PID está en el punto de ajuste.
+   * @return `true` si está en el punto de ajuste, `false` en caso contrario.
+   */
+  bool atSetPoint();
 
   /**
    * @brief Reinicia el estado interno del controlador PID.
@@ -63,9 +81,6 @@ private:
   double _ki; ///< Ganancia integral.
   double _kd; ///< Ganancia derivativa.
 
-  // Intervalo de tiempo entre cálculos
-  double _time_step; ///< Intervalo de tiempo (en segundos).
-
   // Estado interno del controlador
   double _integral;   ///< Acumulador de la parte integral.
   double _prevError;  ///< Error en el cálculo anterior.
@@ -74,8 +89,11 @@ private:
   bool _firstCompute; ///< Indica si es el primer cálculo del controlador.
 
   // Configuración y estado del controlador
-  bool _enable; ///< Indica si el controlador está habilitado.
-  bool _alarm;  ///< Estado de la alarma.
+  bool _enable;        ///< Indica si el controlador está habilitado.
+  bool _stop;          ///< Indica si el controlador está detenido.
+  bool _alarm;         ///< Estado de la alarma.
+  bool _atSetPoint;    ///< Indica si el controlador está en el punto de ajuste.
+  double _spThreshold; ///< Umbral de error relativo para activar la alarma.
 
   // Configuración de la alarma
   unsigned long _alarm_timeout; ///< Tiempo de espera para activar la alarma (en milisegundos).

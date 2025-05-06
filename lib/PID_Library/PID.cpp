@@ -7,8 +7,8 @@
  * @param kd Ganancia derivativa.
  * @param time_step Intervalo de tiempo entre cálculos (en segundos).
  */
-PID::PID(double kp, double ki, double kd, double time_step)
-    : _kp(kp), _ki(ki), _kd(kd), _time_step(time_step), _integral(0), _prevError(0), _outputMin(0),
+PID::PID(double kp, double ki, double kd)
+    : _kp(kp), _ki(ki), _kd(kd), _integral(0), _prevError(0), _outputMin(0),
       _outputMax(10000), _firstCompute(true), _enable(0), _alarm(0), _alarm_timeout(20000), _alarm_threshold(10), _ml_alarm(0) {}
 
 /**
@@ -16,13 +16,14 @@ PID::PID(double kp, double ki, double kd, double time_step)
  * @param min Valor mínimo de la salida.
  * @param max Valor máximo de la salida.
  */
-void PID::setOutputLimits(double min, double max)
+void PID::setOutputLimits(double min, double max, double threshold)
 {
   if (max > min) // Verifica que el límite máximo sea mayor que el mínimo.
   {
     _outputMin = min;
     _outputMax = max;
   }
+  _spThreshold = threshold; // Establece el umbral de error relativo.
 }
 
 /**
@@ -83,8 +84,13 @@ double PID::compute(double input, double setpoint)
     _alarm = true; // Activa la alarma si el error persiste más allá del tiempo de espera.
   }
 
-  // Calcula la parte integral, limitada por los valores de salida.
-  _integral = constrain(_integral + (error * _ki * _time_step), _outputMin, _outputMax);
+  _atSetPoint = (relative_error < _spThreshold); // Verifica si el controlador está en el punto de ajuste.
+
+  if (!_stop)
+  {
+    // Calcula la parte integral, limitada por los valores de salida.
+    _integral = constrain(_integral + (error * _ki), _outputMin, _outputMax);
+  }
 
   // Calcula la parte derivativa.
   double derivative = 0;
@@ -99,7 +105,7 @@ double PID::compute(double input, double setpoint)
   _prevError = error; // Actualiza el error previo.
 
   // Calcula la salida del controlador PID.
-  double output = _kp * error + _integral + (_kd / _time_step) * derivative;
+  double output = _kp * error + _integral + _kd * derivative;
 
   // Limita la salida a los valores establecidos.
   if (output > _outputMax)
@@ -111,12 +117,39 @@ double PID::compute(double input, double setpoint)
 }
 
 /**
+ * @brief Detiene el controlador PID.
+ * @param stop `true` para detener, `false` para continuar.
+ */
+void PID::stop(bool stop)
+{
+  _stop = stop; // Establece el estado de detención del controlador.
+}
+
+/**
  * @brief Obtiene el estado de la alarma.
  * @return `true` si la alarma está activa, `false` en caso contrario.
  */
 bool PID::getAlarm()
 {
   return _alarm;
+}
+
+/***
+ * @brief Obtiene el valor integral del controlador PID.
+ * @return Valor integral del controlador PID.
+ */
+double PID::getIntegral()
+{
+  return _integral; // Devuelve el valor integral del controlador PID.
+}
+
+/**
+ * @brief Verifica si el controlador PID está en el punto de ajuste.
+ * @return `true` si está en el punto de ajuste, `false` en caso contrario.
+ */
+bool PID::atSetPoint()
+{
+  return _atSetPoint; // Devuelve si el controlador está en el punto de ajuste.
 }
 
 /**
