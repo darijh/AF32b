@@ -7,8 +7,9 @@
 
 // LOCAL LIBS
 #include <EepromSTM32.h>  // Librería para manejar la EEPROM
-#include <PeriodicTask.h> // Librería para manejar tareas periódicas
 #include <PID.h>          // Librería para manejar PID
+#include <PeriodicTask.h> // Librería para manejar tareas periódicas
+
 
 // CONSTANTS
 #include <hardware.h>      // Constantes de hardware
@@ -25,28 +26,28 @@ ADC_HandleTypeDef hadc2;   // ADC2 para Vout_B e Iout_B
 
 namespace asciistatus // Definición de los estados ASCII
 {
-  enum status
-  {
-    D = 68, // Desconectado
-    H = 72, // Alto
-    L = 76, // Bajo
-    N = 78  // Normal
-  };
+enum status {
+  D = 68, // Desconectado
+  H = 72, // Alto
+  L = 76, // Bajo
+  N = 78  // Normal
+};
 };
 
 // OBJECTS
 HardwareSerial Serial3(PB11, PB10);          // RX = PB11, TX = PB10
 EepromSTM32 eepr;                            // Objeto para la EEPROM
 Slave<int16_t, HardwareSerial> modbus_slave; // Objeto Modbus
-AinHandler vout_a, iout_a, vout_b, iout_b;   // Objetos para manejar entradas analógicas
-Horometer hor_a, hor_b;                      // Objetos para manejar horómetros
-PeriodicTask one_second_task(1000);          // Tarea periódica de 1 segundo
-PeriodicTask one_hour_task(3600000);         // Tarea periódica de 1 hora
-PeriodicTask one_day_task(86400000);         // Tarea periódica de 1 día
-PID pid_v_a(VKp, VKi, VKd);                  // PID para Vout_A
-PID pid_i_a(IKp, Iki, Ikd);                  // PID para Iout_A
-PID pid_v_b(VKp, VKi, VKd);                  // PID para Vout_B
-PID pid_i_b(IKp, Iki, Ikd);                  // PID para Iout_B
+AinHandler vout_a, iout_a, vout_b,
+    iout_b;                         // Objetos para manejar entradas analógicas
+Horometer hor_a, hor_b;             // Objetos para manejar horómetros
+PeriodicTask one_second_task(1000); // Tarea periódica de 1 segundo
+PeriodicTask one_hour_task(3600000); // Tarea periódica de 1 hora
+PeriodicTask one_day_task(86400000); // Tarea periódica de 1 día
+PID pid_v_a(VKp, VKi, VKd);          // PID para Vout_A
+PID pid_i_a(IKp, Iki, Ikd);          // PID para Iout_A
+PID pid_v_b(VKp, VKi, VKd);          // PID para Vout_B
+PID pid_i_b(IKp, Iki, Ikd);          // PID para Iout_B
 
 // CORE FUNCTION DECLARATIONS
 void CoreInit();  // Inicializa el núcleo
@@ -59,16 +60,16 @@ void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
                 uint32_t &ml_alarm);     // Maneja los AINs
 void ADCReadings(uint32_t interval = 0); // Lee los valores del ADC
 float Read_VDDA();                       // Lee el valor de VDDA
-float Read_Temp();                       // Lee la temperatura del microcontrolador
+float Read_Temp(); // Lee la temperatura del microcontrolador
 uint16_t Set_Duty(int16_t duty_percent); // Establece el duty cycle
 void Regulation();                       // Regula las salidas
-void Factory_Reset();                    // Resetea la configuración de fábrica
-void Modbus_Listener();                  // Listener de Modbus
-void OneSecondTask();                    // Tarea de 1 segundo
-void OneHourTask();                      // Tarea de 1 hora
-void OneDayTask();                       // Tarea de 1 día
-void HorACallback();                     // Callback de Horómetro A
-void HorBCallback();                     // Callback de Horómetro B
+void Factory_Reset();   // Resetea la configuración de fábrica
+void Modbus_Listener(); // Listener de Modbus
+void OneSecondTask();   // Tarea de 1 segundo
+void OneHourTask();     // Tarea de 1 hora
+void OneDayTask();      // Tarea de 1 día
+void HorACallback();    // Callback de Horómetro A
+void HorBCallback();    // Callback de Horómetro B
 
 #include <core.h>            // Núcleo del sistema
 #include <hardware_config.h> // Configuración de hardware
@@ -76,11 +77,10 @@ void HorBCallback();                     // Callback de Horómetro B
 /**
  * @brief Configura el sistema al inicio.
  *
- * Inicializa la HAL, configura el reloj del sistema, los GPIOs, los temporizadores,
- * los ADCs y el núcleo del sistema.
+ * Inicializa la HAL, configura el reloj del sistema, los GPIOs, los
+ * temporizadores, los ADCs y el núcleo del sistema.
  */
-void setup()
-{
+void setup() {
   HAL_Init();           // Inicializa la HAL
   SystemClock_Config(); // Configura el reloj del sistema
   MX_GPIO_Init();       // Inicializa los GPIOs
@@ -94,14 +94,17 @@ void setup()
 /**
  * @brief Bucle principal del sistema.
  *
- * Ejecuta las tareas periódicas, realiza el polling del Modbus y lee los valores
- * de los ADCs en cada iteración.
+ * Ejecuta las tareas periódicas, realiza el polling del Modbus y lee los
+ * valores de los ADCs en cada iteración.
  */
-void loop()
-{
-  one_second_task.run(millis());      // Ejecuta la tarea de 1 segundo
-  one_hour_task.run(millis());        // Ejecuta la tarea de 1 hora
-  one_day_task.run(millis());         // Ejecuta la tarea de 1 día
-  modbus_slave.Poll(regs, REGS_SIZE); // Polling del Modbus
-  ADCReadings(READ_INTERVAL);         // Lee los ADCs
+void loop() {
+  one_second_task.run(millis());             // Ejecuta la tarea de 1 segundo
+  one_hour_task.run(millis());               // Ejecuta la tarea de 1 hora
+  one_day_task.run(millis());                // Ejecuta la tarea de 1 día
+  modbus_slave.Poll(regs, REGS_SIZE);        // Polling del Modbus
+  ADCReadings(READ_INTERVAL);                // Lee los ADCs
+  digitalWrite(HW_STS, modbus_slave.active); // Enciende el led de estado
+  bool led_alarm = regs[MB_ALARM];  // Variable para el estado del led de alarma
+  digitalWrite(HW_FAIL, led_alarm); // Enciende el led de fallo
+  digitalWrite(HW_OK, !led_alarm);  // Enciende el led de OK
 }
