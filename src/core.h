@@ -207,6 +207,10 @@ void ADCReadings(uint32_t interval) {
     iout_b.Sample(Read_ADC_Channel_Raw(
         &hadc2, HW_IOUT_B, ADC_SAMPLETIME_28CYCLES_5)); // Lee el valor del ADC
   }
+  if (ml_sample > millis()) { // Si el tiempo de la última lectura es mayor que
+                              // el tiempo actual
+    ml_sample = millis();     // Actualiza el tiempo de la última lectura
+  }
   vout_a.Run(); // Procesa el valor del ADC
   vout_b.Run(); // Procesa el valor del ADC
   iout_a.Run(); // Procesa el valor del ADC
