@@ -384,10 +384,6 @@ void Modbus_Listener() {
  * @brief Tareas de 1 segundo.
  */
 void OneSecondTask() {
-  digitalWrite(HW_STS, modbus_slave.active); // Enciende el led de estado
-  bool led_alarm = regs[MB_ALARM];  // Variable para el estado del led de alarma
-  digitalWrite(HW_FAIL, led_alarm); // Enciende el led de fallo
-  digitalWrite(HW_OK, !led_alarm);  // Enciende el led de OK
   regs[MB_TEMP] = Read_Temp() * 100.0f;    // Lee la temperatura
   bool hw_ctrl_sts = digitalRead(HW_CTRL); // Lee el estado del control
   regs[MB_IRED_STS] = run_regs[MB_IRED_NC_MODE]
