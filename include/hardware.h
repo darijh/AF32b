@@ -16,14 +16,14 @@
 #define HW_OK PB9
 #define HW_FAIL PB8
 
-#define READS 10          // Número de lecturas para promediar
+#define READS 10         // Número de lecturas para promediar
 #define READ_INTERVAL 10 // Intervalo de lectura de ADC
 
 #define VKp 1
-#define VKi 0.7
+#define VKi 2.5
 #define VKd 0
 #define IKp 1
-#define Iki 1
+#define Iki 1.5
 #define Ikd 0
 
 // HW CONFIG

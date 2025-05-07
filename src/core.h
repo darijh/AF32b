@@ -281,10 +281,25 @@ void Regulation()
     static double iset_ramp_a = 0;
     static double vset_ramp_b = 0;
     static double iset_ramp_b = 0;
-
-    pid_v_a.stop(pid_i_a.atSetPoint()); // Detiene el PID de voltaje si la corriente está en el setpoint
-    Serial.print("integral A: ");
-    Serial.println(pid_v_a.getIntegral());                                      // Imprime el valor integral del PID de voltaje A
+    double error_v_a = run_regs[MB_VSET_A] - regs[MB_V_VAL_A];                  // Error de voltaje A
+    double error_i_a = i_setpoint_a - regs[MB_I_VAL_A];                         // Error de corriente A
+    double rel_error_v_a = abs(error_v_a) / run_regs[MB_VSET_A];                // Error relativo de voltaje A
+    double rel_error_i_a = abs(error_i_a) / i_setpoint_a;                       // Error relativo de corriente A
+                                                                                /*   if (rel_error_i_a < rel_error_v_a && pid_i_a.atSetPoint())
+                                                                                  {
+                                                                                    pid_v_a.stop(true); // Detiene el PID de voltaje si la corriente está en el setpoint
+                                                                                  }
+                                                                                  else
+                                                                                  {
+                                                                                    pid_v_a.stop(false); // Reinicia el PID de voltaje si la corriente no está en el setpoint
+                                                                                  } */
+                                                                                /*     Serial.print("I out A: ");
+                                                                                    Serial.print(regs[MB_I_VAL_A]); // Imprime el valor de la corriente de salida A
+                                                                                    Serial.print(" | AT setpoint A: ");
+                                                                                    Serial.print(pid_i_a.atSetPoint()); // Imprime si el PID de voltaje está en el setpoint
+                                                                                    Serial.print(" | integral A: ");
+                                                                                    Serial.println(pid_v_a.getIntegral());      */
+                                                                                // Imprime el valor integral del PID de voltaje A
     regs[MB_V_DUTY_A] = pid_v_a.compute(regs[MB_V_VAL_A], run_regs[MB_VSET_A]); // Calcula el duty cycle de la tensión de la salida A
     regs[MB_I_DUTY_A] = pid_i_a.compute(regs[MB_I_VAL_A], i_setpoint_a);        // Calcula el duty cycle de la corriente de la salida A
     regs[MB_V_DUTY_B] = pid_v_b.compute(regs[MB_V_VAL_B], run_regs[MB_VSET_B]); // Calcula el duty cycle de la tensión de la salida B
