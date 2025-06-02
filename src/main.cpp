@@ -10,7 +10,6 @@
 #include <PID.h>          // Librería para manejar PID
 #include <PeriodicTask.h> // Librería para manejar tareas periódicas
 
-
 // CONSTANTS
 #include <hardware.h>      // Constantes de hardware
 #include <regmap.h>        // Mapa de registros Modbus
