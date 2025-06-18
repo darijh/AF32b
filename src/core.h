@@ -98,10 +98,10 @@ void Config() {
   pid_i_a.reset();
   pid_v_b.reset();
   pid_i_b.reset();
-  pid_v_a.setEnable(regs[MB_ENALBLE]);
-  pid_i_a.setEnable(regs[MB_ENALBLE]);
-  pid_v_b.setEnable(regs[MB_ENALBLE]);
-  pid_i_b.setEnable(regs[MB_ENALBLE]);
+  pid_v_a.setEnable(regs[MB_ENABLE]);
+  pid_i_a.setEnable(regs[MB_ENABLE]);
+  pid_v_b.setEnable(regs[MB_ENABLE]);
+  pid_i_b.setEnable(regs[MB_ENABLE]);
 }
 
 /**
@@ -273,7 +273,7 @@ void Regulation() {
   HandleAins(iout_b, &regs[MB_I_VAL_B], &regs[MB_I_STS_B], IOUT_B_BIT,
              &regs[MB_ALARM], ml_alarm_iout_b); // Maneja el AIN
 
-  if (run_regs[MB_ENALBLE] == 1) // Si la regulación está habilitada
+  if (run_regs[MB_ENABLE] == 1) // Si la regulación está habilitada
   {
     static bool prev_i_red_sts =
         false; // Variable para almacenar el estado anterior de la entrada de
@@ -388,11 +388,14 @@ void Modbus_Listener() {
  * @brief Tareas de 1 segundo.
  */
 void OneSecondTask() {
-  regs[MB_TEMP] = Read_Temp() * 100.0f;    // Lee la temperatura
-  bool hw_ctrl_sts = digitalRead(HW_CTRL); // Lee el estado del control
-  regs[MB_IRED_STS] = run_regs[MB_IRED_NC_MODE]
-                          ? !hw_ctrl_sts
-                          : hw_ctrl_sts; // Lee el estado del control
+  regs[MB_TEMP] = Read_Temp() * 100.0f; // Lee la temperatura
+
+  if (!regs[MB_IRED_MAN]) {                       // Si no está en modo manual
+    bool hw_ctrl_sts = digitalRead(HW_CTRL);      // Lee el estado del control
+    regs[MB_IRED_STS] = run_regs[MB_IRED_NC_MODE] // Si está en modo NC
+                            ? !hw_ctrl_sts        // Invierte el estado
+                            : hw_ctrl_sts;        // Lee el estado del control
+  }
 
   // HOROMETRO A
   hor_a.Count(); // Cuenta el horometro
