@@ -1,7 +1,8 @@
 /**
  * @brief Inicializa el sistema configurando los módulos principales.
  */
-void CoreInit() {
+void CoreInit()
+{
   eepr.begin(REGS_SIZE); // Inicializa el gestor de EEPROM
   hor_a.Begin(eepr.read(MB_HS_A),
               eepr.read(MB_ROLLS_A)); // Inicializa el horómetro A
@@ -64,10 +65,11 @@ void CoreInit() {
 /**
  * @brief Configura el sistema con valores iniciales o restaurados.
  */
-void Config() {
-  memset(regs, 0, sizeof(regs)); // Limpia el array de registros
-  eepr.read(0, RW_SIZE, regs);   // Lee los registros de la EEPROM
-  for (uint8_t i = 0; i < RW_SIZE; i++) {
+void Config()
+{
+  eepr.read(0, RW_SIZE, regs); // Lee los registros de la EEPROM
+  for (uint8_t i = 0; i < RW_SIZE; i++)
+  {
     run_regs[i] = regs[i]; // Copia los registros a run_regs
   }
 
@@ -108,7 +110,8 @@ void Config() {
  * @brief Lee el ID del hardware desde los dip switches.
  * @return ID del hardware.
  */
-uint8_t Get_ID() {
+uint8_t Get_ID()
+{
   uint8_t id = 0;                          // ID del hardware
   bitWrite(id, 0, !digitalRead(HW_ID_B0)); // Configura el bit 0
   bitWrite(id, 1, !digitalRead(HW_ID_B1)); // Configura el bit 1
@@ -125,12 +128,14 @@ uint8_t Get_ID() {
  * @return Valor crudo leído del ADC.
  */
 uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
-                              uint32_t samplingTime) {
+                              uint32_t samplingTime)
+{
   ADC_ChannelConfTypeDef sConfig = {0}; // Configuración del ADC
   sConfig.Channel = channel;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = samplingTime;
-  if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK) {
+  if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+  {
     return 0; // Error en la configuración
   }
 
@@ -146,7 +151,8 @@ uint16_t Read_ADC_Channel_Raw(ADC_HandleTypeDef *hadc, uint32_t channel,
  * @param channel Canal del ADC a leer.
  * @return Valor convertido en milivoltios.
  */
-float Read_ADC(uint32_t channel) {
+float Read_ADC(uint32_t channel)
+{
   uint16_t adc_value = Read_ADC_Channel_Raw(
       &hadc2, channel, ADC_SAMPLETIME_28CYCLES_5); // Lee el valor del ADC
   float val = adc_value * Read_VDDA() / 4095.0f;   // Convierte a mV
@@ -163,7 +169,8 @@ float Read_ADC(uint32_t channel) {
  * @param ml_alarm Tiempo de alarma.
  */
 void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
-                uint8_t alarm_bit, int16_t *alarm_reg, uint32_t &ml_alarm) {
+                uint8_t alarm_bit, int16_t *alarm_reg, uint32_t &ml_alarm)
+{
   *value_reg = max(ain.GetEU_AVG(), 0.0);  // obtiene el valor en EU
   char status = ain.GetStatus(*value_reg); // obtiene el estado del AIN
 
@@ -173,7 +180,8 @@ void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
     ml_alarm = millis();           // Guarda el tiempo de alarma
     bitSet(*alarm_reg, alarm_bit); // Setea el bit de alarma
     *status_reg = int(status);     // Actualiza el estado
-  } else                           // Si el estado es normal
+  }
+  else // Si el estado es normal
   {
     if (bitRead(*alarm_reg, alarm_bit)) // Si el bit de alarma está seteado
     {
@@ -182,7 +190,8 @@ void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
         bitClear(*alarm_reg, alarm_bit); // Limpia el bit de alarma
         *status_reg = int(status);       // Actualiza el estado
       }
-    } else // Si el bit de alarma no está seteado
+    }
+    else // Si el bit de alarma no está seteado
     {
       *status_reg = int(status); // Actualiza el estado
     }
@@ -193,7 +202,8 @@ void HandleAins(AinHandler &ain, int16_t *value_reg, int16_t *status_reg,
  * @brief Lee los valores del ADC y actualiza los AIN.
  * @param interval Intervalo de tiempo entre lecturas.
  */
-void ADCReadings(uint32_t interval) {
+void ADCReadings(uint32_t interval)
+{
   static uint32_t ml_sample = 0;       // Guarda el tiempo de la última lectura
   if (micros() > ml_sample + interval) // Si ha pasado el intervalo
   {
@@ -207,9 +217,10 @@ void ADCReadings(uint32_t interval) {
     iout_b.Sample(Read_ADC_Channel_Raw(
         &hadc2, HW_IOUT_B, ADC_SAMPLETIME_28CYCLES_5)); // Lee el valor del ADC
   }
-  if (ml_sample > millis()) { // Si el tiempo de la última lectura es mayor que
-                              // el tiempo actual
-    ml_sample = millis();     // Actualiza el tiempo de la última lectura
+  if (ml_sample > millis())
+  {                       // Si el tiempo de la última lectura es mayor que
+                          // el tiempo actual
+    ml_sample = millis(); // Actualiza el tiempo de la última lectura
   }
   vout_a.Run(); // Procesa el valor del ADC
   vout_b.Run(); // Procesa el valor del ADC
@@ -221,7 +232,8 @@ void ADCReadings(uint32_t interval) {
  * @brief Lee el valor de VDDA y lo convierte a milivoltios.
  * @return Valor de VDDA en milivoltios.
  */
-float Read_VDDA() {
+float Read_VDDA()
+{
   uint16_t adc_value =
       Read_ADC_Channel_Raw(&hadc1, ADC_CHANNEL_VREFINT,
                            ADC_SAMPLETIME_239CYCLES_5); // Lee el valor del ADC
@@ -234,7 +246,8 @@ float Read_VDDA() {
  * Celsius.
  * @return Temperatura en grados Celsius.
  */
-float Read_Temp() {
+float Read_Temp()
+{
   uint16_t adc_value =
       Read_ADC_Channel_Raw(&hadc1, ADC_CHANNEL_TEMPSENSOR,
                            ADC_SAMPLETIME_239CYCLES_5); // Lee el valor del ADC
@@ -248,7 +261,8 @@ float Read_Temp() {
  * @param duty_percent Porcentaje de duty cycle (0-10000).
  * @return Valor de PWM correspondiente (0-4095).
  */
-uint16_t Set_Duty(int16_t duty_percent) {
+uint16_t Set_Duty(int16_t duty_percent)
+{
   duty_percent = constrain(duty_percent, 0, 10000); // Limita el rango
   return map(duty_percent, 0, 10000, 0,
              4095); // Mapea el porcentaje a un valor entre 0 y 4095
@@ -257,7 +271,8 @@ uint16_t Set_Duty(int16_t duty_percent) {
 /**
  * @brief Configura el sistema de regulación de voltaje y corriente.
  */
-void Regulation() {
+void Regulation()
+{
   static uint32_t ml_alarm_vout_a = 0,
                   ml_alarm_iout_a =
                       0; // Variables para almacenar el tiempo de alarma
@@ -276,8 +291,8 @@ void Regulation() {
   if (run_regs[MB_ENABLE] == 1) // Si la regulación está habilitada
   {
     static bool prev_i_red_sts =
-        false; // Variable para almacenar el estado anterior de la entrada de
-               // reduccion de corriente
+        false;                               // Variable para almacenar el estado anterior de la entrada de
+                                             // reduccion de corriente
     if (regs[MB_IRED_STS] != prev_i_red_sts) // Si el estado ha cambiado
     {
       pid_i_a.reset(); // Resetea el PID
@@ -309,14 +324,18 @@ void Regulation() {
         pid_i_a.getAlarm()) // Si ambos PID estan en alarma
     {
       bitSet(regs[MB_ALARM], REG_A_BIT); // Setea Alarma
-    } else {
+    }
+    else
+    {
       bitClear(regs[MB_ALARM], REG_A_BIT); // Resetea Alarma
     }
     if (pid_v_b.getAlarm() &&
         pid_i_b.getAlarm()) // Si ambos PID estan en alarma
     {
       bitSet(regs[MB_ALARM], REG_B_BIT); // Setea Alarma
-    } else {
+    }
+    else
+    {
       bitClear(regs[MB_ALARM], REG_B_BIT); // Resetea Alarma
     }
   }
@@ -341,7 +360,8 @@ void Regulation() {
 /**
  * @brief // Resetea la configuración de fábrica.
  */
-void Factory_Reset() {
+void Factory_Reset()
+{
   memset(regs, 0, sizeof(regs)); // Reinicia todos los registro
   regs[MB_VHL_A] = MB_DEF_VHL;   // Establece el valor por defecto
   regs[MB_IHL_A] = MB_DEF_IHL;   // Establece el valor por defecto
@@ -362,7 +382,8 @@ void Factory_Reset() {
 /**
  * @brief Listener para manejar cambios en los registros Modbus.
  */
-void Modbus_Listener() {
+void Modbus_Listener()
+{
   modbus_slave.ChangesProcessed(); // Procesa los cambios
   if (regs[MB_APPLY])              // Si se aplica la configuración
   {
@@ -370,7 +391,8 @@ void Modbus_Listener() {
 
     {
       Factory_Reset(); // Resetea la configuración de fábrica
-    } else             // Si no se aplica el reset de fábrica
+    }
+    else // Si no se aplica el reset de fábrica
     {
       regs[MB_APPLY] = 0; // Limpia el flag de aplicar configuración
       eepr.write(regs, REGS_SIZE, 0, RW_SIZE,
@@ -387,14 +409,20 @@ void Modbus_Listener() {
 /**
  * @brief Tareas de 1 segundo.
  */
-void OneSecondTask() {
+void OneSecondTask()
+{
   regs[MB_TEMP] = Read_Temp() * 100.0f; // Lee la temperatura
 
-  if (!regs[MB_IRED_MAN]) {                       // Si no está en modo manual
+  if (regs[MB_FORZED_IRED] == 0)
+  {                                               // Si no está en modo ired forzado
     bool hw_ctrl_sts = digitalRead(HW_CTRL);      // Lee el estado del control
     regs[MB_IRED_STS] = run_regs[MB_IRED_NC_MODE] // Si está en modo NC
                             ? !hw_ctrl_sts        // Invierte el estado
                             : hw_ctrl_sts;        // Lee el estado del control
+  }
+  else
+  {
+    regs[MB_IRED_STS] = true; // Si está en modo ired forzado, fuerza el estado a ON
   }
 
   // HOROMETRO A
@@ -430,7 +458,11 @@ void OneSecondTask() {
   DBG_PORT.println(iout_b.GetADC_AVG()); // Debug
 #else
 #ifdef DEBUG // Si se habilita el debug
-  DBG_PORT.print("Vout_A: ");                                // Debug
+  DBG_PORT.print("IRED_MAN : ");                             // Debug
+  DBG_PORT.print(regs[MB_FORZED_IRED]);                      // Debug
+  DBG_PORT.print(" | IRED_STS: ");                           // Debug
+  DBG_PORT.println(regs[MB_IRED_STS]);                       // Debug
+  DBG_PORT.print(" Vout_A: ");                               // Debug
   DBG_PORT.print(regs[MB_V_VAL_A] / 100.0f, 2);              // Debug
   DBG_PORT.print(" V | Iout_A: ");                           // Debug
   DBG_PORT.print(regs[MB_I_VAL_A]);                          // Debug
@@ -452,6 +484,10 @@ void OneSecondTask() {
   DBG_PORT.print((regs[MB_IRED_STS]) ? "ON" : "OFF");        // Debug
   DBG_PORT.print(" | ID: ");                                 // Debug
   DBG_PORT.println(Get_ID());                                // Debug
+  DBG_PORT.print("Hor_A: ");                                 // Debug
+  DBG_PORT.print(hor_a.GetHs_str());                         // Debug
+  DBG_PORT.print(" | Hor_B: ");                              // Debug
+  DBG_PORT.println(hor_b.GetHs_str());                       // Debug
   DBG_PORT.println("====================================="); // Debug
 #endif
 #endif
@@ -460,7 +496,8 @@ void OneSecondTask() {
 /**
  * @brief Tareas de 1 hora.
  */
-void OneHourTask() {
+void OneHourTask()
+{
   HAL_ADCEx_Calibration_Start(&hadc1); // Calibración de ADC1
   HAL_ADCEx_Calibration_Start(&hadc2); // Calibración de ADC2
 }
@@ -468,14 +505,16 @@ void OneHourTask() {
 /**
  * @brief Tareas de 1 día.
  */
-void OneDayTask() {
+void OneDayTask()
+{
   NVIC_SystemReset(); // Reinicia el microcontrolador
 }
 
 /**
  * @brief Callback para el horómetro A.
  */
-void HorACallback() {
+void HorACallback()
+{
   eepr.write(MB_HS_A,
              hor_a.GetHs()); // Guarda el valor del horometro A en EEPROM
   eepr.write(MB_ROLLS_A,
@@ -485,7 +524,8 @@ void HorACallback() {
 /**
  * @brief Callback para el horómetro B.
  */
-void HorBCallback() {
+void HorBCallback()
+{
   eepr.write(MB_HS_B,
              hor_b.GetHs()); // Guarda el valor del horometro B en EEPROM
   eepr.write(MB_ROLLS_B,

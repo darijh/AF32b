@@ -1,4 +1,4 @@
-#define VMAX 2100
+#define VMAX 2500
 #define IMAX 3100
 #define VOUT_A_MULT 0.612951138
 #define VOUT_A_OFFSET -3.640896786

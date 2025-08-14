@@ -19,7 +19,7 @@
 #define MB_APPLY 0
 #define MB_CANCEL 1
 #define MB_FACTORY_RESET 2
-#define MB_IRED_MAN 3
+#define MB_FORZED_IRED 3
 #define MB_IRED_NC_MODE 4
 #define MB_ENABLE 5
 #define MB_VSET_A 6
