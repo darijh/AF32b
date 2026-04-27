@@ -15,6 +15,7 @@
 #define HW_STS PC13
 #define HW_OK PB9
 #define HW_FAIL PB8
+#define HW_TXP PB12
 
 #define READS 10         // Número de lecturas para promediar
 #define READ_INTERVAL 10 // Intervalo de lectura de ADC

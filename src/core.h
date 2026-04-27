@@ -8,7 +8,7 @@ void CoreInit() {
   hor_b.Begin(eepr.read(MB_HS_B),
               eepr.read(MB_ROLLS_B)); // Inicializa el horómetro B
   modbus_slave.Begin(&COM_PORT, BAUDRATE,
-                     Get_ID()); // Inicializa el Modbus
+                     Get_ID(), HW_TXP); // Inicializa el Modbus
   modbus_slave.Enable(true);    // Habilita el Modbus
   modbus_slave.SetWriteListener(
       Modbus_Listener);              // Establece el listener de escritura
